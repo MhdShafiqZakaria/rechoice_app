@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rechoice_app/components/my_text_field.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -10,32 +11,138 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+
     return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                colors: [
+                  Colors.blue[900]!,
+                  Colors.blue[700]!,
+                  Colors.blue[500]!,
+                ],
+              ),
+            ),
+            child: Column(
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    children: <Widget>[
+                      //LOGO ReChoice
+                      Image.asset(
+                        'assets/images/logo.png',
+                        height: 250,
+                        width: 250,
+                      ),
 
-      //LOGO ReChoice
+                      SizedBox(height: 10),
 
-      //text Welcome Back ! Sign in to continue
+                      //text Welcome Back ! Sign in to continue
+                      Text(
+                        'Welcome!',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
 
-      //textfield container:
+                      SizedBox(height: 10),
 
-      //email/phone number textfield
+                      Text(
+                        'Sign in to your account to continue',
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
 
-      //password textfield
+                //white container for textFields
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Column(
+                        children: <Widget>[
+                          SizedBox(height: 40),
 
-      //forgot password textbutton
+                          //email/phone number textfield
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Email/Phone Number',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
 
-      //signin button
+                          SizedBox(height: 10),
 
-      //or continue with
+                          Mytextfield(
+                            controller: emailController,
+                            hintText: 'Enter your email or phone number',
+                            obscureText: false,
+                          ),
 
-      //google button 
+                          SizedBox(height: 20),
 
-      // don't have an account? sign up textbutton
+                          //password textfield
+                          Row(
+                            children: [
+                              Text(
+                                'Password',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
 
-      //user or admin login toggle
+                          SizedBox(height: 10),
 
+                          Mytextfield(
+                            controller: passwordController,
+                            hintText: 'Enter your password',
+                            obscureText: true,
+                          ),
 
-      
+                          //forgot password textbutton
+
+                          //signin button
+
+                          //or continue with
+
+                          //google button
+
+                          // don't have an account? sign up textbutton
+
+                          //user or admin login toggle
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
