@@ -78,10 +78,12 @@ class _LoginPageState extends State<LoginPage> {
                         child: Column(
                           children: <Widget>[
                             SizedBox(height: 40),
-                    
+
                             //email/phone number textfield
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 25.0,
+                              ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
@@ -95,20 +97,22 @@ class _LoginPageState extends State<LoginPage> {
                                 ],
                               ),
                             ),
-                    
+
                             SizedBox(height: 10),
-                    
+
                             Mytextfield(
                               controller: emailController,
                               hintText: 'Enter your email or phone number',
                               obscureText: false,
                             ),
-                    
+
                             SizedBox(height: 20),
-                    
+
                             //password textfield
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 25.0,
+                              ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
@@ -122,25 +126,80 @@ class _LoginPageState extends State<LoginPage> {
                                 ],
                               ),
                             ),
-                    
+
                             SizedBox(height: 10),
-                    
+
                             Mytextfield(
                               controller: passwordController,
                               hintText: 'Enter your password',
                               obscureText: true,
                             ),
-                    
+
+                            SizedBox(height: 10),
+
                             //forgot password textbutton
-                    
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 25.0,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  TextButton(
+                                    onPressed: () {},
+                                    child: Text(
+                                      'Forgot Password?',
+                                      style: TextStyle(
+                                        color: const Color.fromARGB(
+                                          255,
+                                          0,
+                                          0,
+                                          230,
+                                        ),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            SizedBox(height: 10),
+
                             //signin button
-                    
+                            Container(
+                              height: 50,
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 25.0,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.centerLeft,
+                                  colors: [
+                                    Colors.blue[800]!,
+                                    Colors.blue[400]!,
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Sign In',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ),
+                            ),
+
                             //or continue with
-                    
+
                             //google button
-                    
+
                             // don't have an account? sign up textbutton
-                    
+
                             //user or admin login toggle
                           ],
                         ),
