@@ -43,7 +43,7 @@ class Dashboard extends StatelessWidget {
                           'ReChoice: UNIMAS Preloved Item',
                           style: TextStyle(
                             color: Colors.black,
-                            fontSize: 10,
+                            fontSize: 15,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
