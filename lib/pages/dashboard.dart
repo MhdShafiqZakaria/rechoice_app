@@ -36,12 +36,13 @@ class Dashboard extends StatelessWidget {
                           'assets/images/logo.png', 
                           width: 35, 
                           height: 35,
+                          color: Colors.white,
                         ),
                         const SizedBox(width: 12),
                         const Text(
                           'ReChoice: UNIMAS Preloved Item',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Colors.black,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
