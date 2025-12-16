@@ -80,81 +80,40 @@ Don't forget to give the project a star! Thanks again!
 5. Open a Pull Request
 
 ## Folder Structures
-    body {
-      font-family: Arial, sans-serif;
-      margin: 24px;
-    }
-    h1, h2 {
-      margin-top: 24px;
-    }
-    ul {
-      list-style-type: none;
-      padding-left: 20px;
-    }
-    li {
-      margin: 6px 0;
-    }
-    .folder {
-      font-weight: bold;
-    }
-  </style>
-</head>
-<body>
-
-<h1>Application Pages</h1>
-
-<ul>
-  <li class="folder">pages</li>
-  <ul>
-    <li>main.dart</li>
-  </ul>
-
-  <li class="folder">admin</li>
-  <ul>
-    <li>admin_dashboard.html</li>
-    <li>listing_moderation.html</li>
-    <li>report_analytics.html</li>
-    <li>user_management.html</li>
-  </ul>
-
-  <li class="folder">ai-features</li>
-  <ul>
-    <li>chatbot.html</li>
-  </ul>
-
-  <li class="folder">auth</li>
-  <ul>
-    <li>login_or_register.html</li>
-    <li>login_page.html</li>
-    <li>register.html</li>
-    <li>change_password.html</li>
-    <li>reset_password.html</li>
-  </ul>
-
-  <li class="folder">main-dashboard</li>
-  <ul>
-    <li>dashboard.html</li>
-    <li>catalog.html</li>
-    <li>product.html</li>
-    <li>search_result.html</li>
-  </ul>
-
-  <li class="folder">payment</li>
-  <ul>
-    <li>cart.html</li>
-    <li>payment.html</li>
-  </ul>
-
-  <li class="folder">users</li>
-  <ul>
-    <li>add_products.html</li>
-    <li>add_new_products.html</li>
-    <li>user_profile_info.html</li>
-    <li>user_reviews.html</li>
-  </ul>
-</ul>
-
-</body>
+pages/
+├── main.dart
+│
+├── admin/
+│   ├── admin_dashboard.dart
+│   ├── listing_moderation.dart
+│   ├── report_analytics.dart
+│   └── user_management.dart
+│
+├── ai-features/
+│   └── chatbot.dart
+│
+├── auth/
+│   ├── change_password.dart
+│   ├── login_or_register.dart
+│   ├── login_page.dart
+│   ├── register.dart
+│   └── reset_password.dart
+│
+├── main-dashboard/
+│   ├── catalog.dart
+│   ├── dashboard.dart
+│   ├── product.dart
+│   └── search_result.dart
+│
+├── payment/
+│   ├── cart.dart
+│   └── payment.dart
+│
+└── users/
+    ├── add_new_products.dart
+    ├── add_products.dart
+    ├── user_profile_info.dart
+    └── user_reviews.dart
 
 
 
