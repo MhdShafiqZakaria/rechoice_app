@@ -74,10 +74,11 @@ If you have a suggestion that would make this better, please fork the repo and c
 Don't forget to give the project a star! Thanks again!
 
 1. Clone the Project (`git clone https://github.com/MhdShafiqZakaria/rechoice_app.git`) then (` cd rechoice_app`)
-2. Create your Feature Branch (`git checkout -b branch-name`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin branch-name`)
-5. Open a Pull Request
+2. Fetch the latest git repository (`git fetch`)
+3. Go to your Feature Branch: Check the branch tab for the branch name (`git checkout branch-name`)
+4. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+5. Push to the Branch (`git push origin branch-name`)
+6. Open a Pull Request
 
 ## Folder Structures
 
