@@ -76,9 +76,10 @@ Don't forget to give the project a star! Thanks again!
 1. Clone the Project (`git clone https://github.com/MhdShafiqZakaria/rechoice_app.git`) then (` cd rechoice_app`)
 2. Fetch the latest git repository (`git fetch`)
 3. Go to your Feature Branch: Check the branch tab for the branch name (`git checkout branch-name`)
-4. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-5. Push to the Branch (`git push origin branch-name`)
-6. Open a Pull Request
+4. Update to the lastest changes (`git pull origin main`) then (`git push origin branch-name`)
+5. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+6. Push to the Branch (`git push origin branch-name`)
+7. Open a Pull Request
 
 ## Folder Structures
 
