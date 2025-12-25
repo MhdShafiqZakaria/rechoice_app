@@ -1,10 +1,13 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:rechoice_app/components/btn_google_sign_in.dart';
 import 'package:rechoice_app/components/btn_sign_in.dart';
 import 'package:rechoice_app/components/my_text_field.dart';
+import 'package:rechoice_app/pages/auth/authenticate.dart';
 
 class Register extends StatefulWidget {
-  final void Function()? onPressed;
+  final Function()? onPressed;
+
   const Register({super.key, required this.onPressed});
 
   @override
@@ -12,19 +15,35 @@ class Register extends StatefulWidget {
 }
 
 class _RegisterState extends State<Register> {
+  final emailController = TextEditingController();
+  final firstNameController = TextEditingController();
+  final lastNameController = TextEditingController();
+  final phoneController = TextEditingController();
+  final passwordController = TextEditingController();
+  String errorMessage = '';
+
+  //sign user in method
+  void createAccount() async {
+    try {
+      await authService.value.register(
+        email: emailController.text,
+        password: passwordController.text,
+        // firstName: firstNameController.text,
+        // lastName: lastNameController.text,
+        // phoneNumber: phoneController.text,
+      );
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        errorMessage = e.message ?? 'User cannot Register';
+      });
+    }
+  }
+
+  //google sign in method
+  void googleSignIn() {}
+
   @override
   Widget build(BuildContext context) {
-    final emailController = TextEditingController();
-    final firstNameController = TextEditingController();
-    final lastNameController = TextEditingController();
-    final phoneController = TextEditingController();
-    final passwordController = TextEditingController();
-
-    //sign user in method
-    void signUserIn() {}
-    //google sign in method
-    void googleSignIn() {}
-
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -260,8 +279,14 @@ class _RegisterState extends State<Register> {
                             SizedBox(height: 20),
 
                             //sign in button (firebase auth)
-                            BtnSignIn(onTap: signUserIn,text:'Create Account'),
+                            Btn(onTap: createAccount, text: 'Create Account'),
 
+                            SizedBox(height: 10),
+                            
+                            Text(
+                              errorMessage,
+                              style: TextStyle(color: Colors.redAccent),
+                            ),
                             SizedBox(height: 20),
 
                             //or

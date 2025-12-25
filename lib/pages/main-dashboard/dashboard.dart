@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 
-class Dashboard extends StatelessWidget {
+class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
 
+  @override
+  State<Dashboard> createState() => _DashboardState();
+}
+
+class _DashboardState extends State<Dashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,11 +41,7 @@ class Dashboard extends StatelessWidget {
                     CircleAvatar(
                       radius: 16,
                       backgroundColor: Colors.white,
-                      child: Icon(
-                        Icons.shopping_bag,
-                        color: Colors.blue,
-                        size: 18,
-                      ),
+                      child: Image.asset('assets/images/logo.png'),
                     ),
 
                     const SizedBox(width: 12),
@@ -58,10 +59,15 @@ class Dashboard extends StatelessWidget {
                     const Spacer(),
 
                     // right logo
-                    CircleAvatar(
-                      radius: 16,
-                      backgroundColor: Colors.white,
-                      child: Icon(Icons.person, color: Colors.blue, size: 18),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, '/profile');
+                      },
+                      child: CircleAvatar(
+                        radius: 16,
+                        backgroundColor: Colors.white,
+                        child: Icon(Icons.person, color: Colors.blue, size: 18),
+                      ),
                     ),
 
                     const SizedBox(width: 12),
@@ -74,7 +80,7 @@ class Dashboard extends StatelessWidget {
               // ================== SEARCH BAR ==================
               Container(
                 height: 40,
-                width: double.infinity, 
+                width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
                   color: Colors.blue[50],
@@ -226,45 +232,47 @@ class Dashboard extends StatelessWidget {
         ),
       ),
 
-      // ================== BOTTOM NAVIGATION BAR ==================
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blue[900]!, Colors.blue[700]!, Colors.blue[500]!],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-        ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.transparent, 
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white70,
-          selectedFontSize: 16.0,
-          unselectedFontSize: 14.0,
-          iconSize: 28.0,
-          currentIndex: 0,
-          elevation: 0, 
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_bag_outlined),
-              label: 'Shop',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart_outlined),
-              label: 'Order',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              label: 'Profile',
-            ),
-          ],
-          onTap: (index) {
-            print('Tapped index: $index');
-          },
-        ),
-      ),
+      // // ================== BOTTOM NAVIGATION BAR ==================
+      // bottomNavigationBar: Container(
+      //   decoration: BoxDecoration(
+      //     gradient: LinearGradient(
+      //       colors: [Colors.blue[900]!, Colors.blue[700]!, Colors.blue[500]!],
+      //       begin: Alignment.centerLeft,
+      //       end: Alignment.centerRight,
+      //     ),
+      //   ),
+      //   child: BottomNavigationBar(
+      //     type: BottomNavigationBarType.fixed,
+      //     backgroundColor: Colors.transparent,
+      //     selectedItemColor: Colors.white,
+      //     unselectedItemColor: Colors.white70,
+      //     selectedFontSize: 16.0,
+      //     unselectedFontSize: 14.0,
+      //     iconSize: 28.0,
+      //     currentIndex: 0,
+      //     elevation: 0,
+      //     items: const [
+      //       BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+      //       BottomNavigationBarItem(
+      //         icon: Icon(Icons.shopping_bag_outlined),
+      //         label: 'Shop',
+      //       ),
+      //       BottomNavigationBarItem(
+      //         icon: Icon(Icons.shopping_cart_outlined),
+      //         label: 'Order',
+      //       ),
+      //       BottomNavigationBarItem(
+      //         icon: Icon(Icons.person_outline),
+      //         label: 'Profile',
+      //       ),
+      //     ],
+      //     onTap: (index) {
+      //       setState(() {
+              
+      //       });
+      //     },
+      //   ),
+      // ),
     );
   }
 }
@@ -273,7 +281,7 @@ class Dashboard extends StatelessWidget {
 class _CategoryItem extends StatelessWidget {
   final IconData icon;
   final String label;
-  final VoidCallback? onTap; 
+  final VoidCallback? onTap;
 
   const _CategoryItem({required this.icon, required this.label, this.onTap});
 

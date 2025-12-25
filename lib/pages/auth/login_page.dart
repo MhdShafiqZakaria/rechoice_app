@@ -1,10 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:rechoice_app/components/btn_google_sign_in.dart';
 import 'package:rechoice_app/components/btn_sign_in.dart';
 import 'package:rechoice_app/components/my_text_field.dart';
+import 'package:rechoice_app/pages/auth/authenticate.dart';
 
 class LoginPage extends StatefulWidget {
-  final void Function()? onPressed;
+  final Function()? onPressed;
   const LoginPage({super.key, required this.onPressed});
 
   @override
@@ -12,16 +14,29 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  String errorMessage = '';
+
+  //sign user in method
+  void signUserIn() async {
+    try {
+      await authService.value.login(
+        email: emailController.text,
+        password: passwordController.text,
+      );
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        errorMessage = e.message ?? "This is not working";
+      });
+    }
+  }
+
+  //google sign in method
+  void googleSignIn() {}
+
   @override
   Widget build(BuildContext context) {
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-
-    //sign user in method
-    void signUserIn() {}
-    //google sign in method
-    void googleSignIn() {}
-
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -153,7 +168,9 @@ class _LoginPageState extends State<LoginPage> {
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   TextButton(
-                                    onPressed: () {},
+                                    onPressed: () {
+                                      Navigator.pushNamed(context, '/resetPW');
+                                    },
                                     child: Text(
                                       'Forgot Password?',
                                       style: TextStyle(
@@ -174,7 +191,13 @@ class _LoginPageState extends State<LoginPage> {
                             SizedBox(height: 10),
 
                             //signin button (firebase auth)
-                            BtnSignIn(onTap: signUserIn, text: 'Sign In'),
+                            Btn(onTap: signUserIn, text: 'Sign In'),
+
+                            SizedBox(height: 15),
+                            Text(
+                              errorMessage,
+                              style: TextStyle(color: Colors.redAccent),
+                            ),
 
                             SizedBox(height: 20),
 
@@ -236,7 +259,7 @@ class _LoginPageState extends State<LoginPage> {
                                   SizedBox(width: 3),
 
                                   TextButton(
-                                    onPressed: widget.onPressed, 
+                                    onPressed: widget.onPressed,
                                     child: Text(
                                       'Sign Up',
                                       style: TextStyle(

@@ -1,4 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:rechoice_app/pages/auth/authenticate.dart';
+import 'package:rechoice_app/pages/main-dashboard/dashboard.dart';
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({super.key});
@@ -9,6 +12,14 @@ class UserProfilePage extends StatefulWidget {
 
 class _UserProfilePageState extends State<UserProfilePage> {
   int selectedTabIndex = 0;
+
+  void logout() async {
+    try {
+      await authService.value.logout();
+    } on FirebaseAuthException catch (e) {
+      print(e.message);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +62,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
                               color: Colors.black,
                             ),
                             onPressed: () {
-                              print('Back button pressed');
+                              Navigator.pop(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return Dashboard();
+                                  },
+                                ),
+                              );
                             },
                           ),
                         ),
@@ -70,18 +88,30 @@ class _UserProfilePageState extends State<UserProfilePage> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: TextButton(
+                          child: IconButton(
+                            icon: Icon(Icons.login_rounded),
                             onPressed: () {
-                              print('Edit button pressed');
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        logout();
+                                        Navigator.popUntil(context, ModalRoute.withName('/'));
+                                      },
+                                      child: const Text('Logout'),
+                                    ),
+                                  ],
+                                  title: Text(
+                                    'Logging out',
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  contentPadding: EdgeInsets.all(20),
+                                  content: Text('Do you want to logout?'),
+                                ),
+                              );
                             },
-                            child: const Text(
-                              'Edit',
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
                           ),
                         ),
                       ],
