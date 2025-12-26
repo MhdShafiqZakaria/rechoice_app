@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class CatalogsPage extends StatefulWidget {
-  const CatalogsPage({super.key});
+  final VoidCallback? onBackPressed;
+  const CatalogsPage({super.key, this.onBackPressed});
 
   @override
   State<CatalogsPage> createState() => _CatalogsPageState();
@@ -19,7 +20,11 @@ class _CatalogsPageState extends State<CatalogsPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            print('Back button pressed');
+            if (widget.onBackPressed != null) {
+              widget.onBackPressed!();
+            } else {
+              Navigator.pop(context);
+            }
           },
         ),
         title: const Text(

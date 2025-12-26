@@ -1,10 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:rechoice_app/pages/auth/authenticate.dart';
-import 'package:rechoice_app/pages/main-dashboard/dashboard.dart';
 
 class UserProfilePage extends StatefulWidget {
-  const UserProfilePage({super.key});
+  final VoidCallback? onBackPressed;
+  const UserProfilePage({super.key, this.onBackPressed});
 
   @override
   State<UserProfilePage> createState() => _UserProfilePageState();
@@ -15,6 +15,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   void logout() async {
     try {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return Center(child: CircularProgressIndicator());
+        },
+      );
       await authService.value.logout();
     } on FirebaseAuthException catch (e) {
       print(e.message);
@@ -62,14 +68,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
                               color: Colors.black,
                             ),
                             onPressed: () {
-                              Navigator.pop(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return Dashboard();
-                                  },
-                                ),
-                              );
+                              if (widget.onBackPressed != null) {
+                                widget.onBackPressed!();
+                              } else {
+                                Navigator.pop(context);
+                              }
                             },
                           ),
                         ),
@@ -82,7 +85,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        // Edit Button
+                        // Logout Button
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -98,7 +101,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
                                     TextButton(
                                       onPressed: () {
                                         logout();
-                                        Navigator.popUntil(context, ModalRoute.withName('/'));
+                                        Navigator.popUntil(
+                                          context,
+                                          ModalRoute.withName('/'),
+                                        );
                                       },
                                       child: const Text('Logout'),
                                     ),

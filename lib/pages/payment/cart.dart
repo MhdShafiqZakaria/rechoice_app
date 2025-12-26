@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class CartPage extends StatefulWidget {
-  const CartPage({super.key});
+  final VoidCallback? onBackPressed;
+  const CartPage({super.key, this.onBackPressed});
 
   @override
   State<CartPage> createState() => _CartPageState();
@@ -43,7 +44,11 @@ class _CartPageState extends State<CartPage> {
                       child: IconButton(
                         icon: const Icon(Icons.arrow_back, color: Colors.black),
                         onPressed: () {
-                          print('Back button pressed');
+                          if (widget.onBackPressed != null) {
+                            widget.onBackPressed!();
+                          } else {
+                            Navigator.pop(context);
+                          }
                         },
                       ),
                     ),

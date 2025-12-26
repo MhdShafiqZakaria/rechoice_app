@@ -21,17 +21,29 @@ class _LoginPageState extends State<LoginPage> {
   //sign user in method
   void signUserIn() async {
     try {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return Center(child: CircularProgressIndicator());
+        },
+      );
       await authService.value.login(
         email: emailController.text,
         password: passwordController.text,
       );
+      popPage();
     } on FirebaseAuthException catch (e) {
       setState(() {
         errorMessage = e.message ?? "This is not working";
+      
       });
+      popPage();
     }
   }
+  void popPage(){
+      Navigator.of(context).pop();
 
+  }
   //google sign in method
   void googleSignIn() {}
 

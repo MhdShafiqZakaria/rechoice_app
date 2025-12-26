@@ -7,6 +7,7 @@ import 'package:rechoice_app/pages/admin/user_management.dart';
 import 'package:rechoice_app/pages/ai-features/chatbot.dart';
 import 'package:rechoice_app/pages/auth/auth_gate.dart';
 import 'package:rechoice_app/pages/auth/change_password.dart';
+import 'package:rechoice_app/pages/auth/landing.dart';
 import 'package:rechoice_app/pages/auth/reset_password.dart';
 import 'package:rechoice_app/pages/main-dashboard/catalog.dart';
 import 'package:rechoice_app/pages/main-dashboard/dashboard.dart';
@@ -34,9 +35,11 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       title: 'ReChoice',
       debugShowCheckedModeBanner: false,
+      //start the app from authGate page
       initialRoute: '/',
       routes: {
         '/': (context) => const AuthGate(),
+        '/Landing': (context) => const LandingPage(),
         '/resetPW': (context) => const ResetPassword(),
         '/changePW': (context) => const ChangePassword(),
         '/dashboard': (context) => const Dashboard(),
