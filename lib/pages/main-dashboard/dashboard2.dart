@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rechoice_app/pages/main-dashboard/search_result.dart';
 // ==================== MODELS ====================
 
 // models/category.dart
@@ -23,11 +24,7 @@ class Category {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'categoryID': categoryID,
-      'name': name,
-      'iconName': iconName,
-    };
+    return {'categoryID': categoryID, 'name': name, 'iconName': iconName};
   }
 }
 
@@ -162,7 +159,9 @@ class DummyDataService {
         quantity: 1,
         description: 'Excellent condition AirPods Pro with charging case',
         status: 'available',
-        images: ['https://via.placeholder.com/300x300/f0f0f0/333333?text=AirPods+Pro'],
+        images: [
+          'https://via.placeholder.com/300x300/f0f0f0/333333?text=AirPods+Pro',
+        ],
       ),
       Item(
         itemID: 2,
@@ -174,7 +173,9 @@ class DummyDataService {
         quantity: 1,
         description: 'iPad Pro 12.9 inch, Space Grey, 256GB',
         status: 'available',
-        images: ['https://via.placeholder.com/300x300/2c2c2c/ffffff?text=iPad+Pro'],
+        images: [
+          'https://via.placeholder.com/300x300/2c2c2c/ffffff?text=iPad+Pro',
+        ],
       ),
       Item(
         itemID: 3,
@@ -186,7 +187,9 @@ class DummyDataService {
         quantity: 1,
         description: 'Apple Watch Ultra with extra bands',
         status: 'available',
-        images: ['https://via.placeholder.com/300x300/1a1a1a/ffffff?text=Watch+Ultra'],
+        images: [
+          'https://via.placeholder.com/300x300/1a1a1a/ffffff?text=Watch+Ultra',
+        ],
       ),
       Item(
         itemID: 4,
@@ -198,7 +201,9 @@ class DummyDataService {
         quantity: 1,
         description: 'Premium noise-cancelling headphones',
         status: 'available',
-        images: ['https://via.placeholder.com/300x300/333333/ffffff?text=Sony+WH-1000XM5'],
+        images: [
+          'https://via.placeholder.com/300x300/333333/ffffff?text=Sony+WH-1000XM5',
+        ],
       ),
       Item(
         itemID: 5,
@@ -210,7 +215,9 @@ class DummyDataService {
         quantity: 1,
         description: 'iPhone 15 Pro Max 256GB Natural Titanium',
         status: 'available',
-        images: ['https://via.placeholder.com/300x300/4a4a4a/ffffff?text=iPhone+15'],
+        images: [
+          'https://via.placeholder.com/300x300/4a4a4a/ffffff?text=iPhone+15',
+        ],
       ),
       Item(
         itemID: 6,
@@ -234,7 +241,9 @@ class DummyDataService {
         quantity: 1,
         description: 'MacBook Pro 14" M3 Pro chip',
         status: 'available',
-        images: ['https://via.placeholder.com/300x300/000000/ffffff?text=MacBook'],
+        images: [
+          'https://via.placeholder.com/300x300/000000/ffffff?text=MacBook',
+        ],
       ),
       Item(
         itemID: 8,
@@ -246,7 +255,9 @@ class DummyDataService {
         quantity: 1,
         description: 'Full-frame mirrorless camera',
         status: 'available',
-        images: ['https://via.placeholder.com/300x300/1a1a1a/ffffff?text=Canon+R6'],
+        images: [
+          'https://via.placeholder.com/300x300/1a1a1a/ffffff?text=Canon+R6',
+        ],
       ),
     ];
   }
@@ -275,12 +286,12 @@ class CategoryButton extends StatelessWidget {
   final VoidCallback onTap;
 
   const CategoryButton({
-    Key? key,
+    super.key,
     required this.name,
     required this.icon,
     required this.isSelected,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -329,11 +340,7 @@ class ProductCard extends StatelessWidget {
   final Item item;
   final VoidCallback onTap;
 
-  const ProductCard({
-    Key? key,
-    required this.item,
-    required this.onTap,
-  }) : super(key: key);
+  const ProductCard({super.key, required this.item, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -405,9 +412,8 @@ class ProductCard extends StatelessWidget {
 
 // screens/dashboard.dart
 
-
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -449,6 +455,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _searchProducts(_searchController.text);
       }
     });
+
+    if (categoryId != null) {
+      Category category = _categories.firstWhere(
+        (c) => c.categoryID == categoryId,
+      );
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SearchResultScreen(
+            categoryId: categoryId,
+            categoryName: category.name,
+            searchResults: _filteredProducts,
+          ),
+        ),
+      );
+    }
   }
 
   void _searchProducts(String query) {
@@ -465,17 +488,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
         List<Item> baseList = _selectedCategoryId == null
             ? _allProducts
             : _allProducts
-                .where((item) => item.category.categoryID == _selectedCategoryId)
-                .toList();
+                  .where(
+                    (item) => item.category.categoryID == _selectedCategoryId,
+                  )
+                  .toList();
 
         _filteredProducts = baseList
-            .where((item) =>
-                item.title.toLowerCase().contains(query.toLowerCase()) ||
-                item.brand.toLowerCase().contains(query.toLowerCase()) ||
-                item.description.toLowerCase().contains(query.toLowerCase()))
+            .where(
+              (item) =>
+                  item.title.toLowerCase().contains(query.toLowerCase()) ||
+                  item.brand.toLowerCase().contains(query.toLowerCase()) ||
+                  item.description.toLowerCase().contains(query.toLowerCase()),
+            )
             .toList();
       }
     });
+    // Navigate to search results bila ada search query
+    if (query.isNotEmpty && _filteredProducts.isNotEmpty) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SearchResultScreen(
+            searchQuery: query,
+            searchResults: _filteredProducts,
+          ),
+        ),
+      );
+    }
   }
 
   void _navigateToProductDetail(Item item) {
@@ -668,15 +707,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   TextButton(
                     onPressed: () {
-                      // TODO: Navigate to all products
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              SearchResultScreen(searchResults: _allProducts),
+                        ),
+                      );
                     },
-                    child: Text(
-                      'See all',
-                      style: TextStyle(
-                        color: Colors.blue.shade700,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: Text('See all'),
                   ),
                 ],
               ),
@@ -707,18 +746,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     )
                   : GridView.builder(
                       padding: const EdgeInsets.all(16),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.68,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.68,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                          ),
                       itemCount: _filteredProducts.length,
                       itemBuilder: (context, index) {
                         return ProductCard(
                           item: _filteredProducts[index],
-                          onTap: () =>
-                              _navigateToProductDetail(_filteredProducts[index]),
+                          onTap: () => _navigateToProductDetail(
+                            _filteredProducts[index],
+                          ),
                         );
                       },
                     ),
@@ -756,10 +797,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           selectedFontSize: 12,
           unselectedFontSize: 11,
           items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
             BottomNavigationBarItem(
               icon: Icon(Icons.shopping_bag_outlined),
               label: 'Catalog',
