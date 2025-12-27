@@ -36,13 +36,15 @@ class MainApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       //start the app from authGate page
       initialRoute: '/',
+
+      //routes for navigation between pages
       routes: {
         '/': (context) => const AuthGate(),
         '/resetPW': (context) => const ResetPassword(),
         '/changePW': (context) => const ChangePassword(),
         '/dashboard': (context) => const Dashboard(),
         '/catalog': (context) => const CatalogsPage(),
-        '/search': (context) => const SearchResult(),
+        '/search': (context) => SearchResult(),
         '/product': (context) => const Product(),
         '/cart': (context) => const CartPage(),
         '/payment': (context) => const PaymentPage(),

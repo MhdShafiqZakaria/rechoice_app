@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:rechoice_app/models/category.dart';
+import 'package:rechoice_app/models/items.dart';
+import 'package:rechoice_app/models/products.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -8,6 +11,8 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
+  final Products _products = Products();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -17,7 +22,7 @@ class _DashboardState extends State<Dashboard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ================== APPBAR BOX ==================
+              // ================== APP BAR BOX ==================
               Container(
                 height: 100,
                 width: double.infinity,
@@ -48,7 +53,7 @@ class _DashboardState extends State<Dashboard> {
 
                     // app name
                     const Text(
-                      'ReChoice: Unimas Preloved Item',
+                      'ReChoice: UNIMAS PreLoved Item',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -142,35 +147,14 @@ class _DashboardState extends State<Dashboard> {
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _CategoryItem(
-                      icon: Icons.phone_android,
-                      label: 'Phones',
-                      onTap: () {},
-                    ),
-                    _CategoryItem(
-                      icon: Icons.laptop,
-                      label: 'Laptops',
-                      onTap: () {},
-                    ),
-                    _CategoryItem(
-                      icon: Icons.sports_esports,
-                      label: 'Consoles',
-                      onTap: () {},
-                    ),
-                    _CategoryItem(
-                      icon: Icons.camera,
-                      label: 'Cameras',
-                      onTap: () {},
-                    ),
-                    _CategoryItem(
-                      icon: Icons.headphones,
-                      label: 'Audio',
-                      onTap: () {},
-                    ),
-                  ],
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: categories.length,
+                  shrinkWrap: true,
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    return _buildCategoryItem(context, category);
+                  },
                 ),
               ),
               const SizedBox(height: 16),
@@ -196,35 +180,25 @@ class _DashboardState extends State<Dashboard> {
               const SizedBox(height: 12),
 
               // ================== Featured Products Grid ==================
-              GridView.count(
+              GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2, // 2 atas 2 bawah
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 3 / 4,
-                children: const [
-                  _ProductCard(
-                    imageAsset: 'assets/images/IPAD.png',
-                    name: 'Product 1',
-                    price: '\$100',
-                  ),
-                  _ProductCard(
-                    imageAsset: 'assets/images/IPAD.png',
-                    name: 'Product 2',
-                    price: '\$200',
-                  ),
-                  _ProductCard(
-                    imageAsset: 'assets/images/IPAD.png',
-                    name: 'Product 3',
-                    price: '\$150',
-                  ),
-                  _ProductCard(
-                    imageAsset: 'assets/images/IPAD.png',
-                    name: 'Product 4',
-                    price: '\$180',
-                  ),
-                ],
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2, // 2 atas 2 bawah
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 3 / 4,
+                ),
+                itemCount: _products.products.length,
+                itemBuilder: (context, index) {
+                  final product = _products.products[index];
+                  return _ProductCard(
+                    imageAsset: product.imagePath,
+                    name: product.title,
+                    price: 'RM${product.price}',
+                    product: product,
+                  );
+                },
               ),
               const SizedBox(height: 16),
             ],
@@ -235,31 +209,53 @@ class _DashboardState extends State<Dashboard> {
   }
 }
 
-// ================== CLASS CATEGORY ITEM WIDGET ==================
-class _CategoryItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
-
-  const _CategoryItem({required this.icon, required this.label, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: CircleAvatar(
-            radius: 16,
+//==================  BUILD CATEGORY ITEM WIDGET ==================
+Widget _buildCategoryItem(BuildContext context, ItemCategory category) {
+  return GestureDetector(
+    onTap: () {
+      Navigator.pushNamed(context, '/search');
+    },
+    child: Container(
+      width: 70,
+      margin: const EdgeInsets.only(right: 8),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 20,
             backgroundColor: Colors.white,
-            child: Icon(icon, color: Colors.blue, size: 18),
+            child: Icon(
+              _iconForCategory(category.categoryID),
+              color: Colors.blue,
+              size: 20,
+            ),
           ),
-        ),
-        const SizedBox(height: 6),
-        Text(label, style: const TextStyle(fontSize: 12)),
-      ],
-    );
+          const SizedBox(height: 6),
+          Text(
+            category.name,
+            style: TextStyle(fontSize: 12, color: Colors.white),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+//==================  ICON CATEGORY ITEM WIDGET ==================
+IconData _iconForCategory(int id) {
+  switch (id) {
+    case 0:
+      return Icons.water_drop;
+    case 1:
+      return Icons.checkroom;
+    case 2:
+      return Icons.checkroom;
+    case 3:
+      return Icons.checkroom;
+    case 4:
+      return Icons.checkroom;
+    default:
+      return Icons.category;
   }
 }
 
@@ -268,18 +264,20 @@ class _ProductCard extends StatelessWidget {
   final String imageAsset;
   final String name;
   final String price;
+  final Items product;
 
   const _ProductCard({
     required this.imageAsset,
     required this.name,
     required this.price,
+    required this.product,
   });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        print('$name tapped');
+        Navigator.pushNamed(context, '/product', arguments: product);
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(

@@ -38,7 +38,7 @@ class _AddProductPageState extends State<AddProductPage> {
             child: IconButton(
               icon: const Icon(Icons.close, color: Colors.black),
               onPressed: () {
-                print('Close button pressed');
+                Navigator.pop(context);
               },
             ),
           ),

@@ -35,17 +35,26 @@ class _LoginPageState extends State<LoginPage> {
     } on FirebaseAuthException catch (e) {
       setState(() {
         errorMessage = e.message ?? "This is not working";
-      
       });
       popPage();
     }
   }
-  void popPage(){
-      Navigator.of(context).pop();
 
+  void popPage() {
+    Navigator.of(context).pop();
   }
+
   //google sign in method
-  void googleSignIn() {}
+  Future<void> googleSignIn() async {
+    // try {
+    //   await authService.value.signInWithGoogle();
+    // } on FirebaseAuthException catch (e) {
+    //   setState(() {
+    //     errorMessage = e.message ?? 'This is not working';
+    //   });
+    // }
+    // await authService.value.signInWithGoogle();
+  }
 
   @override
   Widget build(BuildContext context) {

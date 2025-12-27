@@ -1,10 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:rechoice_app/models/items.dart';
+import 'package:rechoice_app/models/products.dart';
 
-class Product extends StatelessWidget {
-  const Product({super.key});
+class Product extends StatefulWidget {
+  final Items? items;
+  const Product({super.key, this.items});
+
+  @override
+  State<Product> createState() => _ProductState();
+}
+
+class _ProductState extends State<Product> {
+  int _quantity = 1;
+  bool _isFavourite = false;
+
+  // Instantiate Products
+
+  final Products productsInstance = Products();
+  List<Items> allProducts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    allProducts = productsInstance.products;
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Retrieve the item from navigation arguments (passed via route)
+    final currentItem = ModalRoute.of(context)?.settings.arguments as Items?;
+
+    // If no item is passed, show an error message or handle gracefully
+    if (currentItem == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Error')),
+        body: const Center(
+          child: Text('No item data provided. Please navigate properly.'),
+        ),
+      );
+    }
+
     return Scaffold(
       //App Bar
       appBar: AppBar(
@@ -16,7 +51,7 @@ class Product extends StatelessWidget {
               icon: const Icon(Icons.arrow_back, color: Colors.black),
               iconSize: 20,
               padding: EdgeInsets.zero,
-              onPressed: () {},
+              onPressed: () => Navigator.pop(context),
             ),
           ),
         ),
@@ -29,7 +64,9 @@ class Product extends StatelessWidget {
                 icon: const Icon(Icons.shopping_cart, color: Colors.black),
                 iconSize: 20,
                 padding: EdgeInsets.zero,
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.pushNamed(context, '/cart');
+                },
               ),
             ),
           ),
@@ -55,7 +92,7 @@ class Product extends StatelessWidget {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              // Container dengan image
+              // Items image
               Container(
                 width: double.infinity,
                 height: 400,
@@ -74,34 +111,41 @@ class Product extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.asset(
-                    'assets/images/IPAD.png',
+                    currentItem.imagePath,
                     fit: BoxFit.contain,
                   ),
                 ),
               ),
               const SizedBox(height: 16), // Spacing
-              // Row nama produk icon love
+              // Row nama product icon love
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Ipad Air 4th Gen',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  Text(
+                    currentItem.title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.favorite_border),
                     color: Colors.red,
-                    onPressed: () {},
+                    onPressed: () {
+                      setState(() {
+                        _isFavourite = !_isFavourite;
+                      });
+                    },
                   ),
                 ],
               ),
               const SizedBox(height: 1),
 
               // Price
-              const Align(
+              Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  '\$599',
+                  'RM ${currentItem.price.toStringAsFixed(2)}',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -154,17 +198,25 @@ class Product extends StatelessWidget {
               const SizedBox(height: 1),
 
               // Quantity buttons
-              const _QuantitySelector(),
+              _QuantitySelector(
+                quantity: _quantity,
+                onChanged: (newQuantity) {
+                  setState(() {
+                    _quantity = newQuantity;
+                  });
+                },
+                maxQuantity: currentItem.quantity,
+              ),
 
               const SizedBox(height: 16),
 
               //Description
-              const Align(
+              Align(
                 alignment: Alignment.centerLeft,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Description',
                       style: TextStyle(
                         fontSize: 20,
@@ -172,10 +224,10 @@ class Product extends StatelessWidget {
                         color: Colors.black,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
-                      'The iPad features a stunning Retina display, powerful A-series chip, and all-day battery life. Perfect for productivity, creativity, and entertainment. With its sleek design and versatile functionality, it delivers an exceptional user experience for work and play.',
-                      style: TextStyle(
+                      currentItem.description,
+                      style: const TextStyle(
                         fontSize: 14,
                         color: Colors.grey,
                         height: 1.5,
@@ -223,7 +275,7 @@ class Product extends StatelessWidget {
                 ),
               ],
             ),
-            // 2 item kanan 
+            // 2 item kanan
             Row(
               children: [
                 IconButton(
@@ -305,54 +357,40 @@ class _CategoryButton extends StatelessWidget {
 }
 
 //class quantity button
-class _QuantitySelector extends StatefulWidget {
-  const _QuantitySelector();
+class _QuantitySelector extends StatelessWidget {
+  final int quantity;
+  final Function(int) onChanged;
+  final int maxQuantity;
 
-  @override
-  State<_QuantitySelector> createState() => _QuantitySelectorState();
-}
-
-class _QuantitySelectorState extends State<_QuantitySelector> {
-  int quantity = 1;
-
-  void _increment() {
-    setState(() {
-      quantity++;
-    });
-  }
-
-  void _decrement() {
-    setState(() {
-      if (quantity > 1) {
-        quantity--;
-      }
-    });
-  }
+  const _QuantitySelector({
+    required this.quantity,
+    required this.onChanged,
+    required this.maxQuantity,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        // Button minus
         IconButton(
-          onPressed: _decrement,
+          onPressed: quantity > 1 ? () => onChanged(quantity - 1) : null,
           icon: const Icon(Icons.remove_circle_outline),
-          color: Colors.blue,
+          color: quantity > 1 ? Colors.blue : Colors.grey,
           iconSize: 32,
         ),
         const SizedBox(width: 16),
-        // Value
         Text(
           '$quantity',
           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
         const SizedBox(width: 16),
-        // Button plus
         IconButton(
-          onPressed: _increment,
+          onPressed: quantity < maxQuantity
+              ? () => onChanged(quantity + 1)
+              : null,
           icon: const Icon(Icons.add_circle_outline),
-          color: Colors.blue,
+          color: quantity < maxQuantity ? Colors.blue : Colors.grey,
           iconSize: 32,
         ),
       ],

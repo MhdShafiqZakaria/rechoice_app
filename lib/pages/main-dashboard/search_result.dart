@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:rechoice_app/models/products.dart';
 
 class SearchResult extends StatelessWidget {
-  const SearchResult({super.key});
+   SearchResult({super.key});
+   final Products _products = Products();
+
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       //AppBar
       appBar: AppBar(
@@ -16,7 +20,9 @@ class SearchResult extends StatelessWidget {
               icon: const Icon(Icons.arrow_back, color: Colors.black),
               iconSize: 20,
               padding: EdgeInsets.zero,
-              onPressed: () {},
+              onPressed: () {
+                Navigator.pop(context);
+              },
             ),
           ),
         ),
@@ -43,55 +49,24 @@ class SearchResult extends StatelessWidget {
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: GridView.count(
+          child: GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 3 / 4,
-            children: const [
-              _ProductCard(
-                imageAsset: 'assets/images/IPAD.png',
-                name: 'Product 1',
-                price: '\$100',
-              ),
-              _ProductCard(
-                imageAsset: 'assets/images/IPAD.png',
-                name: 'Product 2',
-                price: '\$200',
-              ),
-              _ProductCard(
-                imageAsset: 'assets/images/IPAD.png',
-                name: 'Product 3',
-                price: '\$150',
-              ),
-              _ProductCard(
-                imageAsset: 'assets/images/IPAD.png',
-                name: 'Product 4',
-                price: '\$180',
-              ),
-              _ProductCard(
-                imageAsset: 'assets/images/IPAD.png',
-                name: 'Product 5',
-                price: '\$220',
-              ),
-              _ProductCard(
-                imageAsset: 'assets/images/IPAD.png',
-                name: 'Product 6',
-                price: '\$190',
-              ),
-              _ProductCard(
-                imageAsset: 'assets/images/IPAD.png',
-                name: 'Product 7',
-                price: '\$250',
-              ),
-              _ProductCard(
-                imageAsset: 'assets/images/IPAD.png',
-                name: 'Product 8',
-                price: '\$210',
-              ),
-            ],
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2, // 2 atas 2 bawah
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 3 / 4,
+            ),
+            itemCount: _products.products.length,
+            itemBuilder: (context, index) {
+              final product = _products.products[index];
+              return _ProductCard(
+                imageAsset: product.imagePath,
+                name: product.title,
+                price: 'RM${product.price}',
+              );
+            },
           ),
         ),
       ),
@@ -99,6 +74,7 @@ class SearchResult extends StatelessWidget {
   }
 }
 
+// ================== CLASS featured product ==================
 class _ProductCard extends StatelessWidget {
   final String imageAsset;
   final String name;
@@ -113,7 +89,9 @@ class _ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {},
+      onTap: () {
+        print('$name tapped');
+      },
       borderRadius: BorderRadius.circular(12),
       child: Container(
         decoration: BoxDecoration(

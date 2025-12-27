@@ -51,7 +51,7 @@ class _MyProductsPageState extends State<MyProductsPage> {
                               color: Colors.black,
                             ),
                             onPressed: () {
-                              print('Back button pressed');
+                              Navigator.pushNamed(context, '/dashboard');
                             },
                           ),
                         ),
