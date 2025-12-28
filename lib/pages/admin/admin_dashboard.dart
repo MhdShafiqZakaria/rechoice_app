@@ -42,7 +42,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white12,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
@@ -314,7 +314,7 @@ class _StatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.shade100,
             spreadRadius: 2,
             blurRadius: 8,
             offset: const Offset(0, 2),
@@ -338,7 +338,7 @@ class _StatCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
+                  color: iconColor,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: iconColor, size: 24),
@@ -390,7 +390,7 @@ class _ActivityCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.shade700,
             spreadRadius: 1,
             blurRadius: 4,
             offset: const Offset(0, 2),
@@ -403,7 +403,7 @@ class _ActivityCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor,
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: iconColor, size: 24),

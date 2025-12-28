@@ -14,31 +14,26 @@ class LandingPage extends StatefulWidget {
 class _LandingPageState extends State<LandingPage> {
   int _selectedIndex = 0;
 
-
-
   void _goToDashboard() {
     setState(() {
       _selectedIndex = 0;
     });
   }
 
-
-
   @override
   Widget build(BuildContext context) {
-
     final List<Widget> pages = [
-    Dashboard(),
-    CatalogsPage(onBackPressed: _goToDashboard),
-    CartPage(onBackPressed: _goToDashboard),
-    UserProfilePage(onBackPressed: _goToDashboard),
-  ];
+      Dashboard(),
+      CatalogsPage(onBackPressed: _goToDashboard),
+      CartPage(onBackPressed: _goToDashboard),
+      UserProfilePage(onBackPressed: _goToDashboard),
+    ];
 
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: pages),
 
       // ================== BOTTOM NAVIGATION BAR ==================
-      bottomNavigationBar: _selectedIndex ==0
+      bottomNavigationBar: _selectedIndex == 0
           ? Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -50,14 +45,18 @@ class _LandingPageState extends State<LandingPage> {
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
               ),
               child: BottomNavigationBar(
                 type: BottomNavigationBarType.fixed,
                 backgroundColor: Colors.transparent,
                 selectedItemColor: Colors.white,
                 unselectedItemColor: Colors.white70,
-                selectedFontSize: 16.0,
-                unselectedFontSize: 14.0,
+                selectedFontSize: 12.0,
+                unselectedFontSize: 11.0,
                 iconSize: 28.0,
                 currentIndex: _selectedIndex,
                 elevation: 0,
@@ -68,12 +67,16 @@ class _LandingPageState extends State<LandingPage> {
                   ),
                   BottomNavigationBarItem(
                     icon: Icon(Icons.shopping_bag_outlined),
-                    label: 'Shop',
+                    label: 'Catalog',
                   ),
                   BottomNavigationBarItem(
                     icon: Icon(Icons.shopping_cart_outlined),
-                    label: 'Order',
+                    label: 'Cart',
                   ),
+                  // BottomNavigationBarItem(
+                  //   icon: Icon(Icons.favorite_outline),
+                  //   label: 'Wishlist',
+                  // ),
                   BottomNavigationBarItem(
                     icon: Icon(Icons.person_outline),
                     label: 'Profile',

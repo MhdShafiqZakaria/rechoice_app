@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:rechoice_app/models/items.dart';
-import 'package:rechoice_app/models/products.dart';
+import 'package:rechoice_app/models/items_model.dart';
+import 'package:rechoice_app/services/dummy_data.dart';
 
 class Product extends StatefulWidget {
-  final Items? items;
-  const Product({super.key, this.items});
+  const Product({super.key});
 
   @override
   State<Product> createState() => _ProductState();
@@ -13,33 +12,23 @@ class Product extends StatefulWidget {
 class _ProductState extends State<Product> {
   int _quantity = 1;
   bool _isFavourite = false;
+  late Items currentItem;
 
-  // Instantiate Products
-
-  final Products productsInstance = Products();
-  List<Items> allProducts = [];
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Extract argument here
+    currentItem = ModalRoute.of(context)!.settings.arguments as Items;
+  }
 
   @override
   void initState() {
     super.initState();
-    allProducts = productsInstance.products;
+    currentItem = DummyData.getFeaturedProducts()[0];
   }
 
   @override
   Widget build(BuildContext context) {
-    // Retrieve the item from navigation arguments (passed via route)
-    final currentItem = ModalRoute.of(context)?.settings.arguments as Items?;
-
-    // If no item is passed, show an error message or handle gracefully
-    if (currentItem == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Error')),
-        body: const Center(
-          child: Text('No item data provided. Please navigate properly.'),
-        ),
-      );
-    }
-
     return Scaffold(
       //App Bar
       appBar: AppBar(
@@ -248,7 +237,7 @@ class _ProductState extends State<Product> {
           color: Colors.grey[200],
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
+              color: Colors.grey.shade50,
               spreadRadius: 2,
               blurRadius: 6,
               offset: const Offset(0, -3),
@@ -334,7 +323,7 @@ class _CategoryButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
+              color: Colors.grey.shade700,
               spreadRadius: 2,
               blurRadius: 6,
               offset: const Offset(0, 3),

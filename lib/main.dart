@@ -55,7 +55,7 @@ class MainApp extends StatelessWidget {
         '/changePW': (context) => const ChangePassword(),
         '/dashboard': (context) => const Dashboard(),
         '/catalog': (context) => const CatalogsPage(),
-        '/search': (context) => SearchResult(),
+        '/search': (context) => SearchResult(searchResults: [],),
         '/product': (context) => const Product(),
         '/cart': (context) => const CartPage(),
         '/payment': (context) => const PaymentPage(),
