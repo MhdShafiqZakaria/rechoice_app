@@ -56,7 +56,7 @@ class MainApp extends StatelessWidget {
         '/listingMod': (context) => const ListingModerationPage(),
         '/report': (context) => const ReportAnalyticsPage(),
         '/manageUser': (context) => const UserManagementPage(),
-        '/chatbot': (context) => const Chatbot(),
+        '/chatbot': (context) => const GeminiChatApp(),
       },
     );
   }
