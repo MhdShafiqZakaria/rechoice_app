@@ -11,7 +11,7 @@ import 'package:rechoice_app/pages/auth/reset_password.dart';
 import 'package:rechoice_app/pages/main-dashboard/catalog.dart';
 import 'package:rechoice_app/pages/main-dashboard/dashboard.dart';
 import 'package:rechoice_app/pages/main-dashboard/product.dart';
-import 'package:rechoice_app/pages/main-dashboard/search_result.dart';
+//import 'package:rechoice_app/pages/main-dashboard/search_result.dart';
 import 'package:rechoice_app/pages/payment/cart.dart';
 import 'package:rechoice_app/pages/payment/payment.dart';
 import 'package:rechoice_app/pages/users/add_new_products.dart';
@@ -44,7 +44,7 @@ class MainApp extends StatelessWidget {
         '/changePW': (context) => const ChangePassword(),
         '/dashboard': (context) => const Dashboard(),
         '/catalog': (context) => const CatalogsPage(),
-        '/search': (context) => const SearchResultScreen(),
+        //'/search': (context) => const SearchResultScreen(),
         '/product': (context) => const Product(),
         '/cart': (context) => const CartPage(),
         '/payment': (context) => const PaymentPage(),
