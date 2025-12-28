@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:rechoice_app/pages/admin/admin_dashboard.dart';
@@ -23,6 +24,16 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Add a test document to Firestore to confirm connection
+  try {
+    final db = FirebaseFirestore.instance;
+    await db.collection('test').doc('testDoc').set({'status': 'connected'});
+    print('Firestore connection test successful!');
+  } catch (e) {
+    print('Error connecting to Firestore: $e');
+  }
+
   runApp(const MainApp());
 }
 
