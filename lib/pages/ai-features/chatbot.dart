@@ -34,7 +34,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
 
  Future<String> sendToGemini(String userMessage) async {
-   const String apiKey = "AIzaSyBb-jfuG7OSmLqp7OcYYVtXGLLrzisKsd8"; // Paste your Gemini API key
+   const String apiKey = "API Key"; // Paste your Gemini API key
 
 
    final url = Uri.parse(
