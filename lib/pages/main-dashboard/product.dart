@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rechoice_app/models/model/items_model.dart';
-import 'package:rechoice_app/models/viewmodels/cart.view_model.dart';
+import 'package:rechoice_app/models/services/dummy_data.dart';
+import 'package:rechoice_app/models/viewmodels/cart_view_model.dart';
 import 'package:rechoice_app/models/viewmodels/wishlist_view_model.dart';
-import 'package:rechoice_app/services/dummy_data.dart';
 
 class Product extends StatefulWidget {
   const Product({super.key});
@@ -13,7 +13,6 @@ class Product extends StatefulWidget {
 }
 
 class _ProductState extends State<Product> {
-  int _quantity = 1;
   late Items currentItem;
 
   @override
@@ -31,6 +30,11 @@ class _ProductState extends State<Product> {
 
   @override
   Widget build(BuildContext context) {
+    final CartViewModel cartVM = Provider.of<CartViewModel>(
+      context,
+      listen: false,
+    );
+
     return Scaffold(
       //App Bar
       appBar: AppBar(
@@ -191,28 +195,50 @@ class _ProductState extends State<Product> {
               const SizedBox(height: 16),
 
               //Quantity
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Quantity',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+              Row(
+                children: [
+                  const Text(
+                    'Quantity',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
-                ),
-              ),
-              const SizedBox(height: 1),
+                  const Spacer(),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        //Minus button
+                        IconButton(
+                          icon: const Icon(Icons.remove),
+                          onPressed: () => cartVM.decreaseQuantity(currentItem),
+                        ),
 
-              // Quantity buttons
-              _QuantitySelector(
-                quantity: _quantity,
-                onChanged: (newQuantity) {
-                  setState(() {
-                    _quantity = newQuantity;
-                  });
-                },
-                maxQuantity: currentItem.quantity,
+                        Consumer<CartViewModel>(
+                          builder: (context, cartVM, child) {
+                            final quantity = cartVM.getItemQuantity(
+                              currentItem.itemID,
+                            );
+                            return Text(
+                              quantity.toString(),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            );
+                          },
+                        ),
+
+                        //Plus button
+                        IconButton(
+                          icon: const Icon(Icons.add),
+                          onPressed: () => cartVM.addToCart(currentItem),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 16),
@@ -381,43 +407,3 @@ class _CategoryButton extends StatelessWidget {
 }
 
 //class quantity button
-class _QuantitySelector extends StatelessWidget {
-  final int quantity;
-  final Function(int) onChanged;
-  final int maxQuantity;
-
-  const _QuantitySelector({
-    required this.quantity,
-    required this.onChanged,
-    required this.maxQuantity,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        IconButton(
-          onPressed: quantity > 1 ? () => onChanged(quantity - 1) : null,
-          icon: const Icon(Icons.remove_circle_outline),
-          color: quantity > 1 ? Colors.blue : Colors.grey,
-          iconSize: 32,
-        ),
-        const SizedBox(width: 16),
-        Text(
-          '$quantity',
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(width: 16),
-        IconButton(
-          onPressed: quantity < maxQuantity
-              ? () => onChanged(quantity + 1)
-              : null,
-          icon: const Icon(Icons.add_circle_outline),
-          color: quantity < maxQuantity ? Colors.blue : Colors.grey,
-          iconSize: 32,
-        ),
-      ],
-    );
-  }
-}

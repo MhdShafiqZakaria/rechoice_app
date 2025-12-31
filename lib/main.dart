@@ -2,7 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'package:rechoice_app/models/viewmodels/cart.view_model.dart';
+import 'package:rechoice_app/models/services/authenticate.dart';
+import 'package:rechoice_app/models/services/firestore_service.dart';
+import 'package:rechoice_app/models/services/item_service.dart';
+import 'package:rechoice_app/models/viewmodels/auth_view_model.dart';
+import 'package:rechoice_app/models/viewmodels/cart_view_model.dart';
+import 'package:rechoice_app/models/viewmodels/items_view_model.dart';
+import 'package:rechoice_app/models/viewmodels/users_view_model.dart';
 import 'package:rechoice_app/models/viewmodels/wishlist_view_model.dart';
 import 'package:rechoice_app/pages/admin/admin_dashboard.dart';
 import 'package:rechoice_app/pages/admin/listing_moderation.dart';
@@ -11,6 +17,9 @@ import 'package:rechoice_app/pages/admin/user_management.dart';
 import 'package:rechoice_app/pages/ai-features/chatbot.dart';
 import 'package:rechoice_app/pages/auth/auth_gate.dart';
 import 'package:rechoice_app/pages/auth/change_password.dart';
+import 'package:rechoice_app/pages/auth/login_admin.dart';
+import 'package:rechoice_app/pages/auth/login_page.dart';
+import 'package:rechoice_app/pages/auth/register.dart';
 import 'package:rechoice_app/pages/auth/reset_password.dart';
 import 'package:rechoice_app/pages/main-dashboard/catalog.dart';
 import 'package:rechoice_app/pages/main-dashboard/dashboard.dart';
@@ -21,9 +30,13 @@ import 'package:rechoice_app/pages/payment/cart.dart';
 import 'package:rechoice_app/pages/payment/payment.dart';
 import 'package:rechoice_app/pages/users/add_new_products.dart';
 import 'package:rechoice_app/pages/users/add_products.dart';
+import 'package:rechoice_app/pages/users/user_profile.dart';
 import 'package:rechoice_app/pages/users/user_profile_info.dart';
 import 'package:rechoice_app/pages/users/user_reviews.dart';
+import 'package:rechoice_app/utils/navigation.dart';
 import 'firebase_options.dart';
+
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +54,16 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(
+          create: (_) => AuthViewModel(authService: authService.value),
+        ),
+        ChangeNotifierProvider(
+          create: (context) =>
+              UsersViewModel(firestoreService: FirestoreService()),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => ItemsViewModel(ItemService(FirestoreService())),
+        ),
         ChangeNotifierProvider(create: (_) => WishlistViewModel()),
         ChangeNotifierProxyProvider<WishlistViewModel, CartViewModel>(
           create: (context) => CartViewModel(
@@ -63,6 +86,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'ReChoice',
       debugShowCheckedModeBanner: false,
       //start the app from authGate page
@@ -71,6 +95,9 @@ class MainApp extends StatelessWidget {
       //routes for navigation between pages
       routes: {
         '/': (context) => const AuthGate(),
+        '/login': (context) => LoginPage(),
+        '/register': (context) => Register(),
+        '/admin': (context) => const AdminLoginPage(),
         '/resetPW': (context) => const ResetPassword(),
         '/changePW': (context) => const ChangePassword(),
         '/dashboard': (context) => const Dashboard(),
@@ -81,6 +108,7 @@ class MainApp extends StatelessWidget {
         '/payment': (context) => const PaymentPage(),
         '/wishlist': (context) => const WishlistPage(),
         '/profile': (context) => const UserProfilePage(),
+        '/profile2': (context) => const UserProfile(),
         '/addProd': (context) => const MyProductsPage(),
         '/addNewProd': (context) => const AddProductPage(),
         '/review': (context) => const UserReviewsPage(),

@@ -1,10 +1,9 @@
 // Quantity Selector Widget
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rechoice_app/components/quantity_button.dart';
 import 'package:rechoice_app/models/model/cart_model.dart';
-import 'package:rechoice_app/models/viewmodels/cart.view_model.dart';
+import 'package:rechoice_app/models/viewmodels/cart_view_model.dart';
 
 class QuantitySelector extends StatelessWidget {
   final CartItem cartItem;

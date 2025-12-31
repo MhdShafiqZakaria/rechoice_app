@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rechoice_app/components/wishlist_card.dart';
-import 'package:rechoice_app/models/viewmodels/cart.view_model.dart';
+import 'package:rechoice_app/models/viewmodels/cart_view_model.dart';
 import 'package:rechoice_app/models/viewmodels/wishlist_view_model.dart';
 
 class WishlistPage extends StatefulWidget {
@@ -21,7 +21,10 @@ class _WishlistPageState extends State<WishlistPage> {
         final items = wishlistVM.items;
         return Scaffold(
           backgroundColor: Colors.grey[50],
-          body: Column(
+          body
+          // : wishlistVM.items.isEmpty
+          //     ? _buildEmptyWishlist()
+          : Column(
             children: [
               // Header Section with Blue Background
               Container(
@@ -213,4 +216,41 @@ class _WishlistPageState extends State<WishlistPage> {
       },
     );
   }
+
+  // Widget _buildEmptyWishlist() {
+  //   return Center(
+  //     child: Column(
+  //       mainAxisAlignment: MainAxisAlignment.center,
+  //       children: [
+  //         Icon(Icons.favorite_border, size: 100, color: Colors.grey.shade400),
+  //         const SizedBox(height: 16),
+  //         Text(
+  //           'Your wishlist is empty',
+  //           style: TextStyle(
+  //             fontSize: 18,
+  //             color: Colors.grey.shade600,
+  //             fontWeight: FontWeight.w600,
+  //           ),
+  //         ),
+  //         const SizedBox(height: 8),
+  //         Text(
+  //           'Add items you love to your wishlist',
+  //           style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+  //         ),
+  //         const SizedBox(height: 24),
+  //         ElevatedButton(
+  //           onPressed: () => Navigator.pop(context),
+  //           style: ElevatedButton.styleFrom(
+  //             backgroundColor: const Color(0xFF2E5C9A),
+  //             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+  //           ),
+  //           child: const Text(
+  //             'Start Shopping',
+  //             style: TextStyle(color: Colors.white),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 }

@@ -3,7 +3,8 @@ import 'package:rechoice_app/components/category_btn.dart';
 import 'package:rechoice_app/components/product_card.dart';
 import 'package:rechoice_app/models/model/category_model.dart';
 import 'package:rechoice_app/models/model/items_model.dart';
-import 'package:rechoice_app/services/dummy_data.dart';
+import 'package:rechoice_app/models/services/authenticate.dart';
+import 'package:rechoice_app/models/services/dummy_data.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -82,12 +83,77 @@ class _DashboardState extends State<Dashboard> {
 
   void _navigateToProductDetail(Items item) {
     Navigator.pushNamed(context, '/product', arguments: item);
-    // ScaffoldMessenger.of(context).showSnackBar(
-    //   SnackBar(
-    //     content: Text('Opening ${item.title}...'),
-    //     duration: const Duration(seconds: 1),
-    //   ),
-    // );
+
+  }
+
+  void _showProfileMenu() {
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        MediaQuery.of(context).size.width - 50,
+        80,
+        10,
+        0,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      items: [
+        PopupMenuItem(
+          padding: EdgeInsets.zero,
+          child: InkWell(
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/profile2');
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(Icons.person, color: Colors.blue[700], size: 20),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'My Profile',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        PopupMenuItem(
+          padding: EdgeInsets.zero,
+          child: InkWell(
+            onTap: () async {
+              Navigator.pop(context);
+              await authService.value.logout();
+              if (context.mounted) {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/',
+                  (route) => false,
+                );
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(Icons.logout, color: Colors.red[600], size: 20),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Logout',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.red[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   //==================  ICON CATEGORY ITEM WIDGET ==================
@@ -172,7 +238,7 @@ class _DashboardState extends State<Dashboard> {
                   // Profile
                   GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(context, '/profile');
+                      _showProfileMenu();
                     },
                     child: CircleAvatar(
                       radius: 22,
