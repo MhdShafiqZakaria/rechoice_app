@@ -1,6 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:rechoice_app/pages/auth/authenticate.dart';
+import 'package:provider/provider.dart';
+import 'package:rechoice_app/models/viewmodels/auth_view_model.dart';
 
 class UserProfilePage extends StatefulWidget {
   final VoidCallback? onBackPressed;
@@ -10,8 +10,8 @@ class UserProfilePage extends StatefulWidget {
   State<UserProfilePage> createState() => _UserProfilePageState();
 }
 
-class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProviderStateMixin{
-
+class _UserProfilePageState extends State<UserProfilePage>
+    with SingleTickerProviderStateMixin {
   //tab controller
   late TabController _tabController;
 
@@ -30,16 +30,28 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
   int selectedTabIndex = 0;
 
   void logout() async {
+    final authVM = context.read<AuthViewModel>();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => CircularProgressIndicator(),
+    );
+
     try {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return Center(child: CircularProgressIndicator());
-        },
-      );
-      await authService.value.logout();
-    } on FirebaseAuthException catch (e) {
-      print(e.message);
+      await authVM.logout();
+
+      if (mounted) {
+        Navigator.of(
+          context,
+        ).popUntil((route) => route.isFirst); // Close the loading dialog
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop(); // Close the loading dialog
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Logout failed: $e')));
+      }
     }
   }
 
@@ -115,14 +127,15 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
                                 builder: (context) => AlertDialog(
                                   actions: [
                                     TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
                                       onPressed: () {
+                                        Navigator.pop(context);
                                         logout();
-                                        Navigator.popUntil(
-                                          context,
-                                          ModalRoute.withName('/'),
-                                        );
                                       },
-                                      child: const Text('Logout'),
+                                      child: Text('Logout'),
                                     ),
                                   ],
                                   title: Text(
