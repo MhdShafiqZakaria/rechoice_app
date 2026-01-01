@@ -125,9 +125,106 @@ class MainApp extends StatelessWidget {
         '/adminDashboard': (context) => const AdminDashboardPage(),
         '/listingMod': (context) => const ListingModerationPage(),
         '/report': (context) => const ReportAnalyticsPage(),
-        '/manageUser': (context) => const UserManagementPage(),
+        '/manageUser': (context) => _AdminRouteGuard(
+              child: const UserManagementPage(),
+            ),
         '/chatbot': (context) => const Chatbot(),
       },
     );
   }
 }
+
+/// Route guard to protect admin-only routes
+class _AdminRouteGuard extends StatefulWidget {
+  final Widget child;
+
+  const _AdminRouteGuard({required this.child});
+
+  @override
+  State<_AdminRouteGuard> createState() => _AdminRouteGuardState();
+}
+
+class _AdminRouteGuardState extends State<_AdminRouteGuard> {
+  bool _isChecking = true;
+  bool _hasAccess = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAdminAccess();
+  }
+
+  Future<void> _checkAdminAccess() async {
+    final authVM = context.read<AuthViewModel>();
+    final usersVM = context.read<UsersViewModel>();
+
+    final currentUser = authVM.currentUser;
+    if (currentUser == null) {
+      _redirectToLogin();
+      return;
+    }
+
+    try {
+      final user = await usersVM.fetchUserByUid(currentUser.uid);
+      if (user != null && user.isAdmin) {
+        setState(() {
+          _hasAccess = true;
+          _isChecking = false;
+        });
+      } else {
+        _redirectToDashboard();
+      }
+    } catch (e) {
+      print('Error checking admin access: $e');
+      _redirectToDashboard();
+    }
+  }
+
+  void _redirectToLogin() {
+    Navigator.of(context).pushReplacementNamed('/');
+  }
+
+  void _redirectToDashboard() {
+    if (mounted) {
+      Navigator.of(context).pushReplacementNamed('/dashboard');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Access denied: Admin only'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isChecking) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (!_hasAccess) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.lock, size: 64, color: Colors.red),
+              SizedBox(height: 16),
+              Text(
+                'Access Denied',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text('This page is for administrators only'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return widget.child;
+  }
