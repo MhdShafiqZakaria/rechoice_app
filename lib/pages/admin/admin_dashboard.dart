@@ -105,30 +105,21 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   icon: Icons.person,
                   isSelected: selectedTabIndex == 1,
                   onTap: () {
-                    setState(() {
-                      selectedTabIndex = 1;
-                    });
-                    print('Users tab selected');
+                    Navigator.pushReplacementNamed(context, '/manageUser');
                   },
                 ),
                 _IconTab(
                   icon: Icons.folder,
                   isSelected: selectedTabIndex == 2,
                   onTap: () {
-                    setState(() {
-                      selectedTabIndex = 2;
-                    });
-                    print('Listings tab selected');
+                    Navigator.pushReplacementNamed(context, '/listingMod');
                   },
                 ),
                 _IconTab(
                   icon: Icons.access_time,
                   isSelected: selectedTabIndex == 3,
                   onTap: () {
-                    setState(() {
-                      selectedTabIndex = 3;
-                    });
-                    print('Activity tab selected');
+                    Navigator.pushReplacementNamed(context, '/report');
                   },
                 ),
               ],

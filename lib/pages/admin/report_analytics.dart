@@ -91,30 +91,21 @@ class _ReportAnalyticsPageState extends State<ReportAnalyticsPage> {
                   icon: Icons.dashboard,
                   isSelected: selectedTabIndex == 0,
                   onTap: () {
-                    setState(() {
-                      selectedTabIndex = 0;
-                    });
-                    print('Dashboard tab selected');
+                    Navigator.pushReplacementNamed(context, '/adminDashboard');
                   },
                 ),
                 _IconTab(
                   icon: Icons.person,
                   isSelected: selectedTabIndex == 1,
                   onTap: () {
-                    setState(() {
-                      selectedTabIndex = 1;
-                    });
-                    print('Users tab selected');
+                    Navigator.pushReplacementNamed(context, '/manageUser');
                   },
                 ),
                 _IconTab(
                   icon: Icons.folder,
                   isSelected: selectedTabIndex == 2,
                   onTap: () {
-                    setState(() {
-                      selectedTabIndex = 2;
-                    });
-                    print('Listings tab selected');
+                    Navigator.pushReplacementNamed(context, '/listingMod');
                   },
                 ),
                 _IconTab(

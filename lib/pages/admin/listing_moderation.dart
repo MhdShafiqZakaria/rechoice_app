@@ -92,20 +92,14 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
                   icon: Icons.dashboard,
                   isSelected: selectedTabIndex == 0,
                   onTap: () {
-                    setState(() {
-                      selectedTabIndex = 0;
-                    });
-                    print('Dashboard tab selected');
+                    Navigator.pushReplacementNamed(context, '/adminDashboard');
                   },
                 ),
                 _IconTab(
                   icon: Icons.person,
                   isSelected: selectedTabIndex == 1,
                   onTap: () {
-                    setState(() {
-                      selectedTabIndex = 1;
-                    });
-                    print('Users tab selected');
+                    Navigator.pushReplacementNamed(context, '/manageUser');
                   },
                 ),
                 _IconTab(
@@ -122,10 +116,7 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
                   icon: Icons.access_time,
                   isSelected: selectedTabIndex == 3,
                   onTap: () {
-                    setState(() {
-                      selectedTabIndex = 3;
-                    });
-                    print('Activity tab selected');
+                    Navigator.pushReplacementNamed(context, '/report');
                   },
                 ),
               ],

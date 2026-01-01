@@ -92,10 +92,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   icon: Icons.dashboard,
                   isSelected: selectedTabIndex == 0,
                   onTap: () {
-                    setState(() {
-                      selectedTabIndex = 0;
-                    });
-                    print('Dashboard tab selected');
+                    Navigator.pushReplacementNamed(context, '/adminDashboard');
                   },
                 ),
                 _IconTab(
@@ -112,20 +109,14 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   icon: Icons.folder,
                   isSelected: selectedTabIndex == 2,
                   onTap: () {
-                    setState(() {
-                      selectedTabIndex = 2;
-                    });
-                    print('Listings tab selected');
+                    Navigator.pushReplacementNamed(context, '/listingMod');
                   },
                 ),
                 _IconTab(
                   icon: Icons.access_time,
                   isSelected: selectedTabIndex == 3,
                   onTap: () {
-                    setState(() {
-                      selectedTabIndex = 3;
-                    });
-                    print('Activity tab selected');
+                    Navigator.pushReplacementNamed(context, '/report');
                   },
                 ),
               ],
