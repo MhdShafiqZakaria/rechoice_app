@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:rechoice_app/models/services/authenticate.dart';
+import 'package:rechoice_app/models/services/category_service.dart';
 import 'package:rechoice_app/models/services/firestore_service.dart';
 import 'package:rechoice_app/models/services/item_service.dart';
+import 'package:rechoice_app/models/services/local_storage_service.dart';
 import 'package:rechoice_app/models/viewmodels/auth_view_model.dart';
 import 'package:rechoice_app/models/viewmodels/cart_view_model.dart';
+import 'package:rechoice_app/models/viewmodels/category_view_model.dart';
 import 'package:rechoice_app/models/viewmodels/items_view_model.dart';
 import 'package:rechoice_app/models/viewmodels/users_view_model.dart';
 import 'package:rechoice_app/models/viewmodels/wishlist_view_model.dart';
@@ -36,8 +39,6 @@ import 'package:rechoice_app/pages/users/user_reviews.dart';
 import 'package:rechoice_app/utils/navigation.dart';
 import 'firebase_options.dart';
 
-
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -51,6 +52,9 @@ void main() async {
     print('Error connecting to Firestore: $e');
   }
 
+  final loadStorageService = LocalStorageService();
+  await loadStorageService.init();
+
   runApp(
     MultiProvider(
       providers: [
@@ -61,8 +65,14 @@ void main() async {
           create: (context) =>
               UsersViewModel(firestoreService: FirestoreService()),
         ),
+        Provider.value(value: loadStorageService),
         ChangeNotifierProvider(
-          create: (context) => ItemsViewModel(ItemService(FirestoreService())),
+          create: (context) => ItemsViewModel(
+            ItemService(FirestoreService(), LocalStorageService()),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => CategoryViewModel(CategoryService(FirestoreService())),
         ),
         ChangeNotifierProvider(create: (_) => WishlistViewModel()),
         ChangeNotifierProxyProvider<WishlistViewModel, CartViewModel>(

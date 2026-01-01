@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rechoice_app/components/edit_profile_dialog.dart';
@@ -5,6 +7,7 @@ import 'package:rechoice_app/components/my_products_tab.dart';
 import 'package:rechoice_app/components/profile_app_bar.dart';
 import 'package:rechoice_app/components/profile_info_tab.dart';
 import 'package:rechoice_app/components/reviews_tab.dart';
+import 'package:rechoice_app/components/sliver_tab_bar_delegate.dart';
 import 'package:rechoice_app/models/model/users_model.dart';
 import 'package:rechoice_app/models/services/authenticate.dart';
 import 'package:rechoice_app/models/viewmodels/items_view_model.dart';
@@ -25,6 +28,7 @@ class _UserProfileState extends State<UserProfile>
   late TabController _tabController;
   bool _hasLoadedItems = false;
   bool _isLoading = true;
+  bool _dataLoaded = false;
   Users? _user;
   String? _error;
 
@@ -40,15 +44,21 @@ class _UserProfileState extends State<UserProfile>
   }
 
   Future<void> _loadUserData() async {
+
+
+    print('DEBUG: Starting _loadUserData');
     try {
       setState(() {
         _isLoading = true;
         _error = null;
       });
+      print('DEBUG: Set loading state');
 
       final authUid = authService.value.currentUser?.uid;
+      print('DEBUG: authUid = $authUid');
 
       if (authUid == null) {
+        print('DEBUG: No authUid, setting error');
         setState(() {
           _error = 'Not authenticated';
           _isLoading = false;
@@ -57,17 +67,25 @@ class _UserProfileState extends State<UserProfile>
       }
 
       final profileUid = widget.uid ?? authUid;
+      print('DEBUG: profileUid = $profileUid');
 
       final usersVM = context.read<UsersViewModel>();
       final itemsVM = context.read<ItemsViewModel>();
+      print('DEBUG: Got ViewModels');
 
       // Check cache first
       Users? user = usersVM.getUserByUid(profileUid);
+      print('DEBUG: User from cache = ${user != null}');
 
       // If not in cache, fetch from Firestore
-      user ??= await usersVM.fetchUserByUid(profileUid);
+      if (user == null) {
+        print('DEBUG: Fetching user from Firestore...');
+        user = await usersVM.fetchUserByUid(profileUid);
+        print('DEBUG: Fetched user = ${user != null}');
+      }
 
       if (user == null) {
+        print('DEBUG: User not found, setting error');
         setState(() {
           _error = 'User not found in database';
           _isLoading = false;
@@ -77,10 +95,20 @@ class _UserProfileState extends State<UserProfile>
 
       // Load user items
       if (!_hasLoadedItems) {
+        print('DEBUG: Fetching user items...');
         _hasLoadedItems = true;
-        await itemsVM.fetchUserItems(user.userID);
+        await itemsVM
+            .fetchUserItems(user.userID)
+            .timeout(
+              Duration(seconds: 10),
+              onTimeout: () {
+                throw TimeoutException('Item Fetch timed out');
+              },
+            );
+        print('DEBUG: Fetched user items');
       }
 
+      print('DEBUG: All data loaded, setting state');
       if (mounted) {
         setState(() {
           _user = user;
@@ -88,6 +116,7 @@ class _UserProfileState extends State<UserProfile>
         });
       }
     } catch (e) {
+      print('DEBUG: Exception in _loadUserData: $e');
       if (mounted) {
         setState(() {
           _error = 'Failed to load profile: $e';
@@ -158,6 +187,18 @@ class _UserProfileState extends State<UserProfile>
       return const Scaffold(body: Center(child: Text('Not Authenticated')));
     }
 
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF2E5C9A),
+          title: const Text('Profile', style: TextStyle(color: Colors.white)),
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: Center(child: const CircularProgressIndicator()),
+      );
+    }
+
     if (_error != null) {
       return Scaffold(
         backgroundColor: Colors.grey.shade50,
@@ -190,8 +231,6 @@ class _UserProfileState extends State<UserProfile>
         ),
       );
     }
-    final profileUid = widget.uid ?? authUid;
-    final isOwnProfile = profileUid == authUid;
 
     if (_user == null) {
       return Scaffold(
@@ -204,7 +243,8 @@ class _UserProfileState extends State<UserProfile>
         body: const Center(child: Text('User not found')),
       );
     }
-
+    final profileUid = widget.uid ?? authUid;
+    final isOwnProfile = profileUid == authUid;
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       body: CustomScrollView(
@@ -217,7 +257,7 @@ class _UserProfileState extends State<UserProfile>
           ),
           SliverPersistentHeader(
             pinned: true,
-            delegate: _SliverAppBarDelegate(
+            delegate: SliverTabBarDelegate(
               TabBar(
                 controller: _tabController,
                 labelColor: const Color(0xFF2E5C9A),
@@ -248,30 +288,5 @@ class _UserProfileState extends State<UserProfile>
         ],
       ),
     );
-  }
-}
-
-class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
-  _SliverAppBarDelegate(this._tabBar);
-
-  final TabBar _tabBar;
-
-  @override
-  double get minExtent => _tabBar.preferredSize.height;
-  @override
-  double get maxExtent => _tabBar.preferredSize.height;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return Container(color: Colors.white, child: _tabBar);
-  }
-
-  @override
-  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
-    return false;
   }
 }
