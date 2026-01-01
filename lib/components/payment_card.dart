@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:rechoice_app/models/model/cart_model.dart';
 
@@ -28,26 +30,10 @@ class PaymentCard extends StatelessWidget {
           // Product Info
           Row(
             children: [
+              //Check it is a local file path
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.asset(
-                  cartItems.items.imagePath,
-                  width: 60,
-                  height: 60,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 60,
-                      height: 60,
-                      color: Colors.grey[200],
-                      child: Icon(
-                        Icons.image,
-                        size: 30,
-                        color: Colors.grey[400],
-                      ),
-                    );
-                  },
-                ),
+                child: _buildItemImage(cartItems.items.imagePath)
               ),
               const SizedBox(width: 16),
               Column(
@@ -78,4 +64,38 @@ class PaymentCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildItemImage(String imagePath) {
+  if (imagePath.isEmpty) {
+    return Center(
+      child: Icon(Icons.image_outlined, size: 60, color: Colors.grey),
+    );
+  }
+  
+  // Local file path
+  if (imagePath.startsWith('/')) {
+    final file = File(imagePath);
+    if (file.existsSync()) {
+      return Image.file(file, width: double.infinity, height: 180, fit: BoxFit.cover);
+    }
+  }
+  
+  // Network URL
+  if (imagePath.startsWith('http')) {
+    return Image.network(
+      imagePath,
+      width: double.infinity,
+      height: 180,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => Center(
+        child: Icon(Icons.image_outlined, size: 60, color: Colors.grey),
+      ),
+    );
+  }
+  
+  // Fallback
+  return Center(
+    child: Icon(Icons.image_outlined, size: 60, color: Colors.grey),
+  );
+}
 }

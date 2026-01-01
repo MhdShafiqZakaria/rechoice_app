@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rechoice_app/models/model/items_model.dart';
@@ -37,19 +39,7 @@ class WishlistCard extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   //item image
-                  child: Image.asset(
-                    items.imagePath,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Center(
-                        child: Icon(
-                          Icons.image_outlined,
-                          size: 60,
-                          color: Colors.grey,
-                        ),
-                      );
-                    },
-                  ),
+                  child: _buildItemImage(items.imagePath),
                 ),
               ),
               Positioned(
@@ -181,6 +171,45 @@ class WishlistCard extends StatelessWidget {
       ),
 
       //add to cart button alongside delete button
+    );
+  }
+
+  Widget _buildItemImage(String imagePath) {
+    if (imagePath.isEmpty) {
+      return Center(
+        child: Icon(Icons.image_outlined, size: 60, color: Colors.grey),
+      );
+    }
+
+    // Local file path
+    if (imagePath.startsWith('/')) {
+      final file = File(imagePath);
+      if (file.existsSync()) {
+        return Image.file(
+          file,
+          width: double.infinity,
+          height: 180,
+          fit: BoxFit.cover,
+        );
+      }
+    }
+
+    // Network URL
+    if (imagePath.startsWith('http')) {
+      return Image.network(
+        imagePath,
+        width: double.infinity,
+        height: 180,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Center(
+          child: Icon(Icons.image_outlined, size: 60, color: Colors.grey),
+        ),
+      );
+    }
+
+    // Fallback
+    return Center(
+      child: Icon(Icons.image_outlined, size: 60, color: Colors.grey),
     );
   }
 }
