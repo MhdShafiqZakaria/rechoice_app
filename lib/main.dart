@@ -227,4 +227,4 @@ class _AdminRouteGuardState extends State<_AdminRouteGuard> {
     }
 
     return widget.child;
-  }
+  }}
