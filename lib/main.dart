@@ -43,15 +43,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Add a test document to Firestore to confirm connection
-  try {
-    final db = FirebaseFirestore.instance;
-    await db.collection('test').doc('testDoc').set({'status': 'connected'});
-    print('Firestore connection test successful!');
-  } catch (e) {
-    print('Error connecting to Firestore: $e');
-  }
-
   final loadStorageService = LocalStorageService();
   await loadStorageService.init();
 
@@ -175,7 +166,6 @@ class _AdminRouteGuardState extends State<_AdminRouteGuard> {
         _redirectToDashboard();
       }
     } catch (e) {
-      print('Error checking admin access: $e');
       _redirectToDashboard();
     }
   }
@@ -227,4 +217,5 @@ class _AdminRouteGuardState extends State<_AdminRouteGuard> {
     }
 
     return widget.child;
-  }}
+  }
+}

@@ -64,7 +64,7 @@ class WishlistViewModel extends ChangeNotifier {
       return;
     }
     //check if the items is already in the list
-    if (!_wishlistItems.any((product) => product.itemID == items.itemID)) {
+    if (_wishlistItems.any((product) => product.itemID == items.itemID)) {
       _errorMessage = 'Item already in wishlist';
       notifyListeners();
       return;
