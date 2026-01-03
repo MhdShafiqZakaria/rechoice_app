@@ -81,4 +81,175 @@ class FirestoreService {
       'lastLogin': FieldValue.serverTimestamp(),
     });
   }
+
+  // ==================== ADMIN OPERATIONS ====================
+
+  // Update user status (active, suspended, deleted)
+  Future<void> updateUserStatus(String uid, String status) async {
+    if (!['active', 'suspended', 'deleted'].contains(status)) {
+      throw ArgumentError('Invalid status: $status');
+    }
+
+    await _db.collection('users').doc(uid).update({'status': status});
+  }
+
+  // Update user role (buyer, seller, admin)
+  Future<void> updateUserRole(String uid, String role) async {
+    if (!['buyer', 'seller', 'admin'].contains(role)) {
+      throw ArgumentError('Invalid role: $role');
+    }
+
+    await _db.collection('users').doc(uid).update({'role': role});
+  }
+
+  // Get all users with optional status filter
+  Future<QuerySnapshot> getAllUsers({String? statusFilter}) async {
+    Query query = _db.collection('users');
+
+    if (statusFilter != null && statusFilter != 'All Status') {
+      query = query.where('status', isEqualTo: statusFilter.toLowerCase());
+    }
+
+    return await query.get();
+  }
+
+  // Get users by role
+  Future<QuerySnapshot> getUsersByRole(String role) async {
+    return await _db
+        .collection('users')
+        .where('role', isEqualTo: role.toLowerCase())
+        .get();
+  }
+
+  // Get users by status
+  Future<QuerySnapshot> getUsersByStatus(String status) async {
+    return await _db
+        .collection('users')
+        .where('status', isEqualTo: status.toLowerCase())
+        .get();
+  }
+
+  // Batch update user statuses
+  Future<void> batchUpdateUserStatus(List<String> uids, String status) async {
+    if (!['active', 'suspended', 'deleted'].contains(status)) {
+      throw ArgumentError('Invalid status: $status');
+    }
+
+    final batch = _db.batch();
+
+    for (final uid in uids) {
+      final docRef = _db.collection('users').doc(uid);
+      batch.update(docRef, {'status': status});
+    }
+
+    await batch.commit();
+  }
+
+  // Update user statistics (for tracking)
+  Future<void> updateUserStats(
+    String uid, {
+    int? totalListings,
+    int? totalPurchases,
+    int? totalSales,
+  }) async {
+    final updateData = <String, dynamic>{};
+
+    if (totalListings != null) updateData['totalListings'] = totalListings;
+    if (totalPurchases != null) updateData['totalPurchases'] = totalPurchases;
+    if (totalSales != null) updateData['totalSales'] = totalSales;
+
+    if (updateData.isNotEmpty) {
+      await _db.collection('users').doc(uid).update(updateData);
+    }
+  }
+
+  // Increment user statistics
+  Future<void> incrementUserStats(
+    String uid, {
+    int listingsDelta = 0,
+    int purchasesDelta = 0,
+    int salesDelta = 0,
+  }) async {
+    final updateData = <String, dynamic>{};
+
+    if (listingsDelta != 0) {
+      updateData['totalListings'] = FieldValue.increment(listingsDelta);
+    }
+    if (purchasesDelta != 0) {
+      updateData['totalPurchases'] = FieldValue.increment(purchasesDelta);
+    }
+    if (salesDelta != 0) {
+      updateData['totalSales'] = FieldValue.increment(salesDelta);
+    }
+
+    if (updateData.isNotEmpty) {
+      await _db.collection('users').doc(uid).update(updateData);
+    }
+  }
+
+  // Update reputation score
+  Future<void> updateReputationScore(String uid, double score) async {
+    await _db.collection('users').doc(uid).update({'reputationScore': score});
+  }
+
+  // Search users by name or email
+  Future<List<DocumentSnapshot>> searchUsers(String query) async {
+    final lowerQuery = query.toLowerCase();
+
+    final snapshot = await _db.collection('users').get();
+
+    return snapshot.docs.where((doc) {
+      final data = doc.data();
+      final name = (data['name'] as String? ?? '').toLowerCase();
+      final email = (data['email'] as String? ?? '').toLowerCase();
+
+      return name.contains(lowerQuery) || email.contains(lowerQuery);
+    }).toList();
+  }
+
+  // Get user count by status
+  Future<Map<String, int>> getUserCountsByStatus() async {
+    final snapshot = await _db.collection('users').get();
+
+    final counts = <String, int>{'active': 0, 'suspended': 0, 'deleted': 0};
+
+    for (final doc in snapshot.docs) {
+      final status = doc.data()['status'] as String? ?? 'active';
+      counts[status] = (counts[status] ?? 0) + 1;
+    }
+
+    return counts;
+  }
+
+  // Get user count by role
+  Future<Map<String, int>> getUserCountsByRole() async {
+    final snapshot = await _db.collection('users').get();
+
+    final counts = <String, int>{'buyer': 0, 'seller': 0, 'admin': 0};
+
+    for (final doc in snapshot.docs) {
+      final role = doc.data()['role'] as String? ?? 'buyer';
+      counts[role] = (counts[role] ?? 0) + 1;
+    }
+
+    return counts;
+  }
+
+  // Soft delete (set status to deleted instead of removing document)
+  Future<void> softDeleteUser(String uid) async {
+    await updateUserStatus(uid, 'deleted');
+  }
+
+  // Permanently delete user and all related data
+  Future<void> permanentlyDeleteUser(String uid) async {
+    final batch = _db.batch();
+
+    // Delete user document
+    batch.delete(_db.collection('users').doc(uid));
+
+    // You can add more deletions here for related data
+    // e.g., user's listings, cart items, orders, etc.
+
+    await batch.commit();
+  }
 }

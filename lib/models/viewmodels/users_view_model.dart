@@ -96,6 +96,57 @@ class UsersViewModel extends ChangeNotifier {
     }
   }
 
+  // Get filtered users based on search, status, and role
+  List<Users> getFilteredUsers({
+    String? searchQuery,
+    String? status,
+    String? role,
+  }) {
+    return _users.where((user) {
+      // Search filter
+      final matchesSearch =
+          searchQuery == null ||
+          searchQuery.isEmpty ||
+          user.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
+          user.email.toLowerCase().contains(searchQuery.toLowerCase());
+
+      // Status filter
+      final userStatusString = user.status
+          .toString()
+          .split('.')
+          .last
+          .toLowerCase();
+      final matchesStatus =
+          status == null || userStatusString == status.toLowerCase();
+
+      // Role filter
+      final userRoleString = user.role.toString().split('.').last.toLowerCase();
+      final matchesRole = role == null || userRoleString == role.toLowerCase();
+
+      return matchesSearch && matchesStatus && matchesRole;
+    }).toList();
+  }
+
+  // Get status counts
+  Map<String, int> getStatusCounts() {
+    return {
+      'active': _users.where((u) => u.isActive).length,
+      'suspended': _users.where((u) => u.isSuspended).length,
+      'inactive': _users
+          .where((u) => !u.isActive && !u.isSuspended && !u.isDeleted)
+          .length,
+    };
+  }
+
+  // Get role counts
+  Map<String, int> getRoleCounts() {
+    return {
+      'buyer': _users.where((u) => u.isBuyer).length,
+      'seller': _users.where((u) => u.isSeller).length,
+      'admin': _users.where((u) => u.isAdmin).length,
+    };
+  }
+
   // Search users by name or email
   Future<void> searchUsers(String query) async {
     if (query.isEmpty) {
@@ -155,7 +206,7 @@ class UsersViewModel extends ChangeNotifier {
 
       await _firestoreService.updateUser(uid, updateData);
 
-      // Update local list
+      // Refresh user in local list
       final index = _users.indexWhere((u) => u.uid == uid);
       if (index != -1) {
         final doc = await _firestoreService.getUser(uid);
@@ -173,11 +224,34 @@ class UsersViewModel extends ChangeNotifier {
     }
   }
 
-  //update local user
+  // Update user role (admin operation)
+  Future<void> updateUserRole(String uid, String role) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _firestoreService.updateUserRole(uid, role);
+
+      // Update local list
+      final index = _users.indexWhere((u) => u.uid == uid);
+      if (index != -1) {
+        final userRole = UserRole.values.byName(role);
+        _users[index] = _users[index].copyWith(role: userRole);
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Update local user (for optimistic updates)
   void updateLocalUser(Users updatedUser) {
-    final index = users.indexWhere((u) => u.uid == updatedUser.uid);
+    final index = _users.indexWhere((u) => u.uid == updatedUser.uid);
     if (index != -1) {
-      users[index] = updatedUser;
+      _users[index] = updatedUser;
       notifyListeners();
     }
   }
@@ -198,15 +272,17 @@ class UsersViewModel extends ChangeNotifier {
   }
 
   // Helper: Update user status in Firestore
+  // Helper: Update user status in Firestore
   Future<void> _updateUserStatus(String uid, UserStatus status) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      await _firestoreService.updateUser(uid, {
-        'status': status.toString().split('.').last,
-      });
+      await _firestoreService.updateUserStatus(
+        uid,
+        status.toString().split('.').last,
+      );
 
       // Update local list
       final index = _users.indexWhere((u) => u.uid == uid);
@@ -238,14 +314,34 @@ class UsersViewModel extends ChangeNotifier {
     }
   }
 
-  static String getInitials(String name) {
-    final names = name.split(' ');
+  static String getInitials(String? name) {
+    if (name == null || name.trim().isEmpty)
+      return '?'; // Fallback for null/empty names
+
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return '?';
+
+    final names = trimmed
+        .split(' ')
+        .where((part) => part.isNotEmpty)
+        .toList(); // Filter out empty parts
+
     if (names.length >= 2) {
-      return '${names[0][0]}${names[1][0]}'.toUpperCase();
-    } else if (names.isNotEmpty) {
-      return names[0].substring(0, 2).toUpperCase();
+      // Take first char of first two parts, if available
+      final first = names[0].isNotEmpty ? names[0][0] : '?';
+      final second = names[1].isNotEmpty ? names[1][0] : '?';
+      return '$first$second'.toUpperCase();
+    } else if (names.isNotEmpty && names[0].isNotEmpty) {
+      // Single name: Take first 1-2 chars safely
+      final firstPart = names[0];
+      if (firstPart.length >= 2) {
+        return firstPart.substring(0, 2).toUpperCase();
+      } else {
+        return firstPart[0].toUpperCase(); // Just the first char if only 1 char
+      }
     }
-    return 'U';
+
+    return '?'; // Ultimate fallback
   }
 
   static String getUsername(String email) {

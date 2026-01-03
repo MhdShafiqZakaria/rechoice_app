@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:rechoice_app/components/edit_profile_dialog.dart';
-import 'package:rechoice_app/components/my_products_tab.dart';
-import 'package:rechoice_app/components/profile_app_bar.dart';
-import 'package:rechoice_app/components/profile_info_tab.dart';
-import 'package:rechoice_app/components/reviews_tab.dart';
-import 'package:rechoice_app/components/sliver_tab_bar_delegate.dart';
+import 'package:rechoice_app/components/user/edit_profile_dialog.dart';
+import 'package:rechoice_app/components/user/my_products_tab.dart';
+import 'package:rechoice_app/components/user/profile_app_bar.dart';
+import 'package:rechoice_app/components/user/profile_info_tab.dart';
+import 'package:rechoice_app/components/user/reviews_tab.dart';
+import 'package:rechoice_app/components/user/sliver_tab_bar_delegate.dart';
 import 'package:rechoice_app/models/model/users_model.dart';
 import 'package:rechoice_app/models/services/authenticate.dart';
 import 'package:rechoice_app/models/viewmodels/items_view_model.dart';

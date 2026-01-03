@@ -1,11 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rechoice_app/models/model/items_model.dart';
 import 'package:rechoice_app/models/services/dummy_data.dart';
 import 'package:rechoice_app/models/viewmodels/cart_view_model.dart';
 import 'package:rechoice_app/models/viewmodels/wishlist_view_model.dart';
+import 'package:rechoice_app/utils/build_item_image.dart';
 
 class Product extends StatefulWidget {
   const Product({super.key});
@@ -16,6 +15,14 @@ class Product extends StatefulWidget {
 
 class _ProductState extends State<Product> {
   late Items currentItem;
+  Color? selectedColor;
+  final List<Color> colorOptions = [
+    Colors.red,
+    Colors.blue,
+    Colors.green,
+    Colors.yellow,
+    Colors.purple,
+  ];
 
   @override
   void didChangeDependencies() {
@@ -107,7 +114,7 @@ class _ProductState extends State<Product> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: _buildItemImage(currentItem.imagePath),
+                  child: buildItemImage(currentItem.imagePath, 80),
                 ),
               ),
               const SizedBox(height: 16), // Spacing
@@ -169,7 +176,7 @@ class _ProductState extends State<Product> {
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Option',
+                  'Color',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -183,13 +190,19 @@ class _ProductState extends State<Product> {
               // Row dengan 3 container
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Expanded(child: _CategoryButton(label: 'iPad Air')),
-                  SizedBox(width: 8),
-                  Expanded(child: _CategoryButton(label: 'iPad Pro')),
-                  SizedBox(width: 8),
-                  Expanded(child: _CategoryButton(label: 'iPad Mini')),
-                ],
+                children: colorOptions
+                    .map(
+                      (color) => _ColorOption(
+                        color: color,
+                        isSelected: selectedColor == color,
+                        onTap: () {
+                          setState(() {
+                            selectedColor = color;
+                          });
+                        },
+                      ),
+                    )
+                    .toList(),
               ),
               const SizedBox(height: 16),
 
@@ -363,82 +376,37 @@ class _ProductState extends State<Product> {
       ),
     );
   }
-
-  Widget _buildItemImage(String imagePath) {
-    if (imagePath.isEmpty) {
-      return Center(
-        child: Icon(Icons.image_outlined, size: 60, color: Colors.grey),
-      );
-    }
-
-    // Local file path
-    if (imagePath.startsWith('/')) {
-      final file = File(imagePath);
-      if (file.existsSync()) {
-        return Image.file(
-          file,
-          width: double.infinity,
-          height: 180,
-          fit: BoxFit.cover,
-        );
-      }
-    }
-
-    // Network URL
-    if (imagePath.startsWith('http')) {
-      return Image.network(
-        imagePath,
-        width: double.infinity,
-        height: 180,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Center(
-          child: Icon(Icons.image_outlined, size: 60, color: Colors.grey),
-        ),
-      );
-    }
-
-    // Fallback
-    return Center(
-      child: Icon(Icons.image_outlined, size: 60, color: Colors.grey),
-    );
-  }
 }
 
-//class option button
-class _CategoryButton extends StatelessWidget {
-  final String label;
+class _ColorOption extends StatelessWidget {
+  final Color color;
+  final bool isSelected;
+  final VoidCallback onTap;
 
-  const _CategoryButton({required this.label});
+  const _ColorOption({
+    required this.color,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {},
-      borderRadius: BorderRadius.circular(8),
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 255, 255, 255),
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.shade700,
-              spreadRadius: 2,
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: Colors.blue,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isSelected ? Colors.blue : Colors.transparent,
+            width: 3,
           ),
         ),
+        child: isSelected
+            ? const Icon(Icons.check, color: Colors.white, size: 24)
+            : null,
       ),
     );
   }

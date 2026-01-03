@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rechoice_app/models/services/authenticate.dart';
+import 'package:rechoice_app/components/admin/admin_shared_widget.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -13,272 +13,99 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: Column(
-        children: [
-          // Header Section with Blue Background
-          Container(
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF0D47A1),
-                  Color(0xFF1976D2),
-                  Color(0xFF2196F3),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white12,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.people,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Text(
-                          'Admin Dashboard',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.logout, color: Colors.blue),
-                        onPressed: () async {
-                          await authService.value.logout();
-                          if (context.mounted) {
-                            Navigator.pushNamedAndRemoveUntil(
-                              context,
-                              '/',
-                              (route) => false,
-                            );
-                          }
-                        },
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // Tab Bar
-          Container(
-            color: Colors.white,
-            child: Row(
-              children: [
-                _IconTab(
-                  icon: Icons.dashboard,
-                  isSelected: selectedTabIndex == 0,
-                  onTap: () {
-                    setState(() {
-                      selectedTabIndex = 0;
-                    });
-                    print('Dashboard tab selected');
-                  },
-                ),
-                _IconTab(
-                  icon: Icons.person,
-                  isSelected: selectedTabIndex == 1,
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, '/manageUser');
-                  },
-                ),
-                _IconTab(
-                  icon: Icons.folder,
-                  isSelected: selectedTabIndex == 2,
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, '/listingMod');
-                  },
-                ),
-                _IconTab(
-                  icon: Icons.access_time,
-                  isSelected: selectedTabIndex == 3,
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, '/report');
-                  },
-                ),
-              ],
-            ),
-          ),
-          // Content Section
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Dashboard Overview Title
-                    const Text(
-                      'Dashboard Overview',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Monitor your platform performance and key metrics',
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                    ),
-                    const SizedBox(height: 24),
-                    // Stats Cards Grid
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _StatCard(
-                            title: 'Total Users',
-                            value: '1,247',
-                            change: '+12.5% from last month',
-                            changeColor: Colors.green,
-                            icon: Icons.person,
-                            iconColor: Colors.blue,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _StatCard(
-                            title: 'Active Users',
-                            value: '892',
-                            change: '+8.2% from last month',
-                            changeColor: Colors.green,
-                            icon: Icons.add,
-                            iconColor: Colors.teal,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _StatCard(
-                            title: 'Total Listings',
-                            value: '3,456',
-                            change: '+15.3% from last month',
-                            changeColor: Colors.green,
-                            icon: Icons.tag_faces,
-                            iconColor: Colors.orange,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _StatCard(
-                            title: 'Pending Reports',
-                            value: '22',
-                            change: '+5 new reports',
-                            changeColor: Colors.red,
-                            icon: Icons.warning,
-                            iconColor: Colors.red,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    // Recent Activity Section
-                    const Text(
-                      'Recent Activity',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Activity Cards
-                    const _ActivityCard(
-                      icon: Icons.person_add,
+    return AdminSliverScaffold(
+      selectedTabIndex: 0,
+      title: 'Dashboard Overview',
+      subtitle: 'Monitor your platform performance and key metrics',
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsetsGeometry.all(20),
+          child: Column(
+            children: [
+              // Stats Cards Grid
+              Row(
+                children: [
+                  Expanded(
+                    child: _StatCard(
+                      title: 'Total Users',
+                      value: '1,247',
+                      change: '+12.5% from last month',
+                      changeColor: Colors.green,
+                      icon: Icons.person,
                       iconColor: Colors.blue,
-                      title: 'New user registration',
-                      subtitle: 'John Smith joined the platform',
-                      time: '2 min ago',
                     ),
-                    const SizedBox(height: 12),
-                    const _ActivityCard(
-                      icon: Icons.check,
-                      iconColor: Colors.green,
-                      title: 'Listing approved',
-                      subtitle: 'iPhone 15 Pro listing was approved',
-                      time: '5 min ago',
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _StatCard(
+                      title: 'Active Users',
+                      value: '892',
+                      change: '+8.2% from last month',
+                      changeColor: Colors.green,
+                      icon: Icons.add,
+                      iconColor: Colors.teal,
                     ),
-                    const SizedBox(height: 12),
-                    const _ActivityCard(
-                      icon: Icons.close,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _StatCard(
+                      title: 'Total Listings',
+                      value: '3,456',
+                      change: '+15.3% from last month',
+                      changeColor: Colors.green,
+                      icon: Icons.tag_faces,
+                      iconColor: Colors.orange,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _StatCard(
+                      title: 'Pending Reports',
+                      value: '22',
+                      change: '+5 new reports',
+                      changeColor: Colors.red,
+                      icon: Icons.warning,
                       iconColor: Colors.red,
-                      title: 'Report received',
-                      subtitle: 'Inappropriate content reported',
-                      time: '10 min ago',
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Icon Tab Widget
-class _IconTab extends StatelessWidget {
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _IconTab({
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: isSelected ? Colors.blue : Colors.transparent,
-                width: 3,
+              const SizedBox(height: 32),
+              // Recent Activity Section
+              const Text(
+                'Recent Activity',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-            ),
-          ),
-          child: Icon(
-            icon,
-            color: isSelected ? Colors.blue : Colors.grey[600],
-            size: 28,
+              const SizedBox(height: 16),
+              // Activity Cards
+              const _ActivityCard(
+                icon: Icons.person_add,
+                iconColor: Colors.blue,
+                title: 'New user registration',
+                subtitle: 'John Smith joined the platform',
+                time: '2 min ago',
+              ),
+              const SizedBox(height: 12),
+              const _ActivityCard(
+                icon: Icons.check,
+                iconColor: Colors.green,
+                title: 'Listing approved',
+                subtitle: 'iPhone 15 Pro listing was approved',
+                time: '5 min ago',
+              ),
+              const SizedBox(height: 12),
+              const _ActivityCard(
+                icon: Icons.close,
+                iconColor: Colors.red,
+                title: 'Report received',
+                subtitle: 'Inappropriate content reported',
+                time: '10 min ago',
+              ),
+            ],
           ),
         ),
       ),

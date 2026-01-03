@@ -30,7 +30,7 @@ class Items {
   final int viewCount; // Track popularity
   final int favoriteCount; // Track wishlist adds
 
-  Items({
+  const Items({
     required this.itemID,
     required this.title,
     required this.category,
@@ -56,25 +56,20 @@ class Items {
   //Factory Method to create model instance from Json map
 
   factory Items.fromJson(Map<String, dynamic> json) {
-    print('DEBUG: Starting fromJson for item: ${json['itemID']}');
     try {
       final postedTs = json['postedDate'];
       final moderatedTs = json['moderatedDate'];
-      print('DEBUG: Parsing timestamps and basic fields');
 
       // Add prints before each major field
-      print('DEBUG: Parsing category');
       final category = json['category'] != null
           ? ItemCategoryModel.fromJson(json['category'] as Map<String, dynamic>)
           : ItemCategoryModel.empty();
 
-      print('DEBUG: Parsing moderationStatus');
       final moderationStatus = ModerationStatus.values.firstWhere(
         (e) => e.toString() == 'ModerationStatus.${json['moderationStatus']}',
         orElse: () => ModerationStatus.pending,
       );
 
-      print('DEBUG: Creating Items object');
 
       final item = Items(
         itemID: json['itemID'] as int? ?? 0,
@@ -98,12 +93,8 @@ class Items {
         viewCount: json['viewCount'] as int? ?? 0,
         favoriteCount: json['favoriteCount'] as int? ?? 0,
       );
-      print(
-        'DEBUG: Items object created successfully for itemID: ${item.itemID}',
-      );
       return item;
     } catch (e) {
-      print('DEBUG: Error in Items.fromJson: $e for json: $json');
       rethrow; // Re-throw so it's caught in getItemsBySeller
     }
   }

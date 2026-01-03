@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:rechoice_app/components/quantity_selector.dart';
+import 'package:rechoice_app/components/dashboard/quantity_selector.dart';
 import 'package:rechoice_app/models/model/cart_model.dart';
 import 'package:rechoice_app/models/viewmodels/cart_view_model.dart';
+import 'package:rechoice_app/utils/build_item_image.dart';
 
 // Cart Item Widget
 class CartCard extends StatelessWidget {
@@ -35,20 +36,7 @@ class CartCard extends StatelessWidget {
           // Product Image
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              cartItems.items.imagePath,
-              width: 80,
-              height: 80,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 80,
-                  height: 80,
-                  color: Colors.grey[200],
-                  child: Icon(Icons.image, size: 40, color: Colors.grey[400]),
-                );
-              },
-            ),
+            child: buildItemImage(cartItems.items.imagePath, 120),
           ),
           const SizedBox(width: 16),
           // Product Info

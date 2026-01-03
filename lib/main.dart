@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -20,6 +19,7 @@ import 'package:rechoice_app/pages/admin/user_management.dart';
 import 'package:rechoice_app/pages/ai-features/chatbot.dart';
 import 'package:rechoice_app/pages/auth/auth_gate.dart';
 import 'package:rechoice_app/pages/auth/change_password.dart';
+import 'package:rechoice_app/pages/auth/loading_page.dart';
 import 'package:rechoice_app/pages/auth/login_admin.dart';
 import 'package:rechoice_app/pages/auth/login_page.dart';
 import 'package:rechoice_app/pages/auth/register.dart';
@@ -42,15 +42,6 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Add a test document to Firestore to confirm connection
-  try {
-    final db = FirebaseFirestore.instance;
-    await db.collection('test').doc('testDoc').set({'status': 'connected'});
-    print('Firestore connection test successful!');
-  } catch (e) {
-    print('Error connecting to Firestore: $e');
-  }
 
   final loadStorageService = LocalStorageService();
   await loadStorageService.init();
@@ -125,9 +116,8 @@ class MainApp extends StatelessWidget {
         '/adminDashboard': (context) => const AdminDashboardPage(),
         '/listingMod': (context) => const ListingModerationPage(),
         '/report': (context) => const ReportAnalyticsPage(),
-        '/manageUser': (context) => _AdminRouteGuard(
-              child: const UserManagementPage(),
-            ),
+        '/manageUser': (context) =>
+            _AdminRouteGuard(child: const UserManagementPage()),
         '/chatbot': (context) => const Chatbot(),
       },
     );
@@ -155,18 +145,16 @@ class _AdminRouteGuardState extends State<_AdminRouteGuard> {
   }
 
   Future<void> _checkAdminAccess() async {
-    final authVM = context.read<AuthViewModel>();
-    final usersVM = context.read<UsersViewModel>();
+    final authService = AuthService();
 
-    final currentUser = authVM.currentUser;
-    if (currentUser == null) {
+    if (authService.currentUser == null) {
       _redirectToLogin();
       return;
     }
 
     try {
-      final user = await usersVM.fetchUserByUid(currentUser.uid);
-      if (user != null && user.isAdmin) {
+      final isAdmin = await authService.isAdmin();
+      if (isAdmin) {
         setState(() {
           _hasAccess = true;
           _isChecking = false;
@@ -175,7 +163,6 @@ class _AdminRouteGuardState extends State<_AdminRouteGuard> {
         _redirectToDashboard();
       }
     } catch (e) {
-      print('Error checking admin access: $e');
       _redirectToDashboard();
     }
   }
@@ -199,11 +186,7 @@ class _AdminRouteGuardState extends State<_AdminRouteGuard> {
   @override
   Widget build(BuildContext context) {
     if (_isChecking) {
-      return Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return LoadingPage();
     }
 
     if (!_hasAccess) {
@@ -227,4 +210,5 @@ class _AdminRouteGuardState extends State<_AdminRouteGuard> {
     }
 
     return widget.child;
-  }}
+  }
+}

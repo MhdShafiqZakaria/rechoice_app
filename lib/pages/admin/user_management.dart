@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:rechoice_app/components/admin/admin_shared_widget.dart';
+import 'package:rechoice_app/components/admin/user_details_dialog.dart';
+import 'package:rechoice_app/components/admin/user_dialogs.dart';
+import 'package:rechoice_app/components/admin/user_filter_bar.dart';
+import 'package:rechoice_app/components/admin/user_row.dart';
+import 'package:rechoice_app/components/admin/user_stats_card.dart';
+import 'package:rechoice_app/components/admin/user_table_header.dart';
+import 'package:rechoice_app/models/services/authenticate.dart';
 import 'package:rechoice_app/models/viewmodels/users_view_model.dart';
 import 'package:rechoice_app/models/model/users_model.dart';
-import 'package:rechoice_app/models/services/authenticate.dart';
 import 'package:rechoice_app/models/utils/export_utils.dart';
+import 'package:rechoice_app/pages/auth/loading_page.dart';
 
 class UserManagementPage extends StatefulWidget {
   const UserManagementPage({super.key});
@@ -13,51 +21,114 @@ class UserManagementPage extends StatefulWidget {
 }
 
 class _UserManagementPageState extends State<UserManagementPage> {
-  int selectedTabIndex = 1; // User Management tab selected
+  final AuthService _authService = AuthService();
   String selectedStatus = 'All Status';
+  String selectedRole = 'All Roles';
   String searchQuery = '';
   List<Users> filteredUsers = [];
   bool isLoading = true;
+  Map<String, int> statusCounts = {};
+  Map<String, int> roleCounts = {};
 
   @override
   void initState() {
     super.initState();
-    _loadUsers();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUsers();
+    });
   }
 
   Future<void> _loadUsers() async {
-    final usersVM = context.read<UsersViewModel>();
-    await usersVM.loadUsers();
-    if (mounted) {
-      setState(() {
-        isLoading = false;
-        _filterUsers();
-      });
+    try {
+      await _authService.verifyAdminAccess();
+      final usersVM = context.read<UsersViewModel>();
+      await usersVM.loadUsers();
+      if (mounted) {
+        setState(() {
+          _updateFilteredData();
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/dashboard');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Access denied: Admin only'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
-  void _filterUsers() {
-    final usersVM = context.read<UsersViewModel>();
-    final allUsers = usersVM.users;
+  void _updateFilteredData() {
+    final usersVM = Provider.of<UsersViewModel>(context, listen: false);
 
-    filteredUsers = allUsers.where((user) {
-      // Filter by search query (name or email)
-      final matchesSearch = searchQuery.isEmpty ||
-          user.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
-          user.email.toLowerCase().contains(searchQuery.toLowerCase());
+    final rawStatusCounts = usersVM.getStatusCounts();
+    final rawRoleCounts = usersVM.getRoleCounts();
 
-      // Filter by status - convert enum to string for comparison
-      final userStatusString = user.status.toString().split('.').last.toLowerCase();
-      final matchesStatus = selectedStatus == 'All Status' ||
-          (selectedStatus == 'Active' && userStatusString == 'active') ||
-          (selectedStatus == 'Suspended' && userStatusString == 'suspended') ||
-          (selectedStatus == 'Inactive' && userStatusString == 'inactive');
+    statusCounts = {
+      'active': rawStatusCounts['active'] ?? rawStatusCounts['Active'] ?? 0,
+      'suspended':
+          rawStatusCounts['suspended'] ?? rawStatusCounts['Suspended'] ?? 0,
+      'deleted':
+          rawStatusCounts['deleted'] ??
+          rawStatusCounts['Deleted'] ??
+          rawStatusCounts['Inactive'] ??
+          0,
+    };
 
-      // Don't show deleted users
-      final isNotDeleted = userStatusString != 'deleted';
+    roleCounts = {
+      'user':
+          rawRoleCounts['user'] ??
+          rawRoleCounts['User'] ??
+          rawRoleCounts['buyer'] ??
+          rawRoleCounts['Buyer'] ??
+          0,
+      'seller': rawRoleCounts['seller'] ?? rawRoleCounts['Seller'] ?? 0,
+      'admin': rawRoleCounts['admin'] ?? rawRoleCounts['Admin'] ?? 0,
+    };
 
-      return matchesSearch && matchesStatus && isNotDeleted;
-    }).toList();
+    String? backendStatus = _mapStatusToBackend(selectedStatus);
+    String? backendRole = _mapRoleToBackend(selectedRole);
+
+    try {
+      filteredUsers = usersVM.getFilteredUsers(
+        searchQuery: searchQuery,
+        status: backendStatus,
+        role: backendRole,
+      );
+    } catch (e) {
+      print('Error filtering users: $e');
+      filteredUsers = [];
+    }
+  }
+
+  String? _mapStatusToBackend(String uiStatus) {
+    switch (uiStatus) {
+      case 'Active':
+        return 'active';
+      case 'Suspended':
+        return 'suspended';
+      case 'Inactive':
+        return 'deleted';
+      default:
+        return null;
+    }
+  }
+
+  String? _mapRoleToBackend(String uiRole) {
+    switch (uiRole) {
+      case 'Buyer':
+        return 'buyer';
+      case 'Seller':
+        return 'seller';
+      case 'Admin':
+        return 'admin';
+      default:
+        return null;
+    }
   }
 
   Future<void> _exportUsers() async {
@@ -70,11 +141,11 @@ class _UserManagementPageState extends State<UserManagementPage> {
       );
 
       final filePath = await ExportUtils.exportUsersToCSV(filteredUsers);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ Users exported successfully to ${filePath.split('/').last}'),
+            content: Text('Users exported to ${filePath.split('/').last}'),
             duration: const Duration(seconds: 4),
             backgroundColor: Colors.green,
           ),
@@ -84,7 +155,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('❌ Export failed: ${e.toString()}'),
+            content: Text('Export failed: ${e.toString()}'),
             duration: const Duration(seconds: 4),
             backgroundColor: Colors.red,
           ),
@@ -95,636 +166,309 @@ class _UserManagementPageState extends State<UserManagementPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: Column(
-        children: [
-          // Header Section with Blue Background
-          Container(
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF0D47A1),
-                  Color(0xFF1976D2),
-                  Color(0xFF2196F3),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+    return AdminSliverScaffold(
+      selectedTabIndex: 1,
+      title: 'User Management',
+      subtitle: 'Manage user accounts and permissions',
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isLoading)
+              UserStatsCards(
+                roleCounts: roleCounts,
+                statusCounts: statusCounts,
               ),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.people,
-                            color: Colors.blue,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Text(
-                          'Admin Dashboard',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.logout, color: Colors.blue),
-                        onPressed: () async {
-                          await authService.value.logout();
-                          if (context.mounted) {
-                            Navigator.pushNamedAndRemoveUntil(
-                              context,
-                              '/',
-                              (route) => false,
-                            );
-                          }
+            const SizedBox(height: 24),
+
+            TextField(
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                  _updateFilteredData();
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Search by name or email...',
+                hintStyle: TextStyle(color: Colors.grey[400]),
+                prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+                suffixIcon: searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 20),
+                        onPressed: () {
+                          setState(() {
+                            searchQuery = '';
+                            _updateFilteredData();
+                          });
                         },
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ),
-                  ],
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.blue, width: 2),
                 ),
               ),
             ),
-          ),
-          // Tab Bar
-          Container(
-            color: Colors.white,
-            child: Row(
-              children: [
-                _IconTab(
-                  icon: Icons.dashboard,
-                  isSelected: selectedTabIndex == 0,
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, '/adminDashboard');
-                  },
-                ),
-                _IconTab(
-                  icon: Icons.person,
-                  isSelected: selectedTabIndex == 1,
-                  onTap: () {
-                    setState(() {
-                      selectedTabIndex = 1;
-                    });
-                    print('Users tab selected');
-                  },
-                ),
-                _IconTab(
-                  icon: Icons.folder,
-                  isSelected: selectedTabIndex == 2,
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, '/listingMod');
-                  },
-                ),
-                _IconTab(
-                  icon: Icons.access_time,
-                  isSelected: selectedTabIndex == 3,
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, '/report');
-                  },
-                ),
-              ],
+            const SizedBox(height: 16),
+
+            UserFiltersBar(
+              selectedStatus: selectedStatus,
+              selectedRole: selectedRole,
+              onStatusChanged: (value) {
+                setState(() {
+                  selectedStatus = value;
+                  _updateFilteredData();
+                });
+              },
+              onRoleChanged: (value) {
+                setState(() {
+                  selectedRole = value;
+                  _updateFilteredData();
+                });
+              },
+              onExport: _exportUsers,
             ),
-          ),
-          // Content Section
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // User Management Title
-                    const Text(
-                      'User Management',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Manage user accounts and permissions',
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                    ),
-                    const SizedBox(height: 24),
-                    // Search Bar
-                    TextField(
-                      onChanged: (value) {
-                        setState(() {
-                          searchQuery = value;
-                          _filterUsers();
-                        });
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Search users...',
-                        hintStyle: TextStyle(color: Colors.grey[400]),
-                        prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.blue),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Filter and Export Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: DropdownButton<String>(
-                              value: selectedStatus,
-                              isExpanded: true,
-                              underline: const SizedBox(),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'All Status',
-                                  child: Text('All Status'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Active',
-                                  child: Text('Active'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Suspended',
-                                  child: Text('Suspended'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Inactive',
-                                  child: Text('Inactive'),
-                                ),
-                              ],
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedStatus = value!;
-                                  _filterUsers();
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        ElevatedButton(
-                          onPressed: () async {
-                            _exportUsers();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 32,
-                              vertical: 20,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text(
-                            'Export',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    // Table Header
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(12),
-                          topRight: Radius.circular(12),
-                        ),
-                      ),
-                      child: Row(
+            const SizedBox(height: 24),
+
+            Text(
+              'Showing ${filteredUsers.length} user${filteredUsers.length != 1 ? 's' : ''}',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            const UserTableHeader(),
+
+            Flexible(
+              child: isLoading
+                  ? const Center(child: LoadingPage())
+                  : filteredUsers.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Expanded(
-                            flex: 3,
-                            child: Text(
-                              'USER',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[600],
-                              ),
-                            ),
+                          Icon(
+                            Icons.people_outline,
+                            size: 64,
+                            color: Colors.grey[400],
                           ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              'STATUS',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              'JOIN DATE',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              'ACTIONS',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // User Rows
-                    if (isLoading)
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    else if (filteredUsers.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Center(
-                          child: Text(
-                            'No users found',
+                          const SizedBox(height: 16),
+                          Text(
+                            searchQuery.isNotEmpty
+                                ? 'No users match your search'
+                                : 'No users found',
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey[600],
                             ),
                           ),
+                          if (searchQuery.isNotEmpty ||
+                              selectedStatus != 'All Status' ||
+                              selectedRole != 'All Roles') ...[
+                            const SizedBox(height: 8),
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  searchQuery = '';
+                                  selectedStatus = 'All Status';
+                                  selectedRole = 'All Roles';
+                                  _updateFilteredData();
+                                });
+                              },
+                              child: const Text('Clear filters'),
+                            ),
+                          ],
+                        ],
+                      ),
+                    )
+                  : Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(12),
+                          bottomRight: Radius.circular(12),
                         ),
-                      )
-                    else
-                      ...filteredUsers.map((user) {
-                        return _UserRow(
-                          user: user,
-                          onView: () => _showUserDetails(user),
-                          onSuspend: () => _suspendUser(user),
-                          onActivate: () => _activateUser(user),
-                        );
-                      }).toList(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: Builder(
+                        builder: (context) {
+                          // Create a snapshot of the list to prevent index issues
+                          final usersList = List<Users>.from(filteredUsers);
+                          final itemCount = usersList.length;
 
-  void _showUserDetails(Users user) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(user.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Email: ${user.email}'),
-            const SizedBox(height: 8),
-            Text('Role: ${user.role.toString().split('.').last}'),
-            const SizedBox(height: 8),
-            Text('Status: ${user.status}'),
-            const SizedBox(height: 8),
-            Text('User ID: ${user.userID}'),
-            const SizedBox(height: 8),
-            Text('Join Date: ${user.joinDate}'),
-            if (user.bio != null && user.bio!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text('Bio: ${user.bio}'),
-            ],
-            if (user.phoneNumber != null && user.phoneNumber!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text('Phone: ${user.phoneNumber}'),
-            ],
+                          return ListView.builder(
+                            key: ValueKey(
+                              itemCount,
+                            ), // Force rebuild when count changes
+                            itemCount: itemCount,
+                            itemBuilder: (context, index) {
+                              // Safety check to prevent index out of range
+                              if (index < 0 || index >= usersList.length) {
+                                return const SizedBox.shrink();
+                              }
+
+                              try {
+                                final user = usersList[index];
+                                return UserRow(
+                                  key: ValueKey(
+                                    user.uid,
+                                  ), // Unique key for each row
+                                  user: user,
+                                  onView: () =>
+                                      UserDetailsDialog.show(context, user),
+                                  onSuspend: () => _handleSuspend(user),
+                                  onActivate: () => _handleActivate(user),
+                                  onDelete: () => _handleDelete(user),
+                                  onChangeRole: () => _handleChangeRole(user),
+                                );
+                              } catch (e) {
+                                print(
+                                  'Error rendering user at index $index: $e',
+                                );
+                                return Container(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Text(
+                                    'Error loading user',
+                                    style: TextStyle(color: Colors.red[700]),
+                                  ),
+                                );
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    ),
+            ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
       ),
     );
   }
 
-  Future<void> _suspendUser(Users user) async {
-    final usersVM = context.read<UsersViewModel>();
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Suspend User'),
-        content: Text('Are you sure you want to suspend ${user.name}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Suspend'),
-          ),
-        ],
-      ),
-    );
+  Future<void> _handleChangeRole(Users user) async {
+    final selectedRole = await UserDialogs.showChangeRoleDialog(context, user);
 
-    if (confirm == true) {
-      await usersVM.suspendUser(user.uid);
-      _loadUsers();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User suspended successfully')),
-        );
+    if (selectedRole != null &&
+        selectedRole != user.role.toString().split('.').last) {
+      try {
+        await _authService.updateUserRole(user.uid, selectedRole);
+        await _loadUsers();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Role updated to ${selectedRole.toUpperCase()}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to update role: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
 
-  Future<void> _activateUser(Users user) async {
-    final usersVM = context.read<UsersViewModel>();
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Activate User'),
-        content: Text('Are you sure you want to activate ${user.name}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Activate'),
-          ),
-        ],
-      ),
-    );
+  Future<void> _handleSuspend(Users user) async {
+    final confirm = await UserDialogs.showSuspendDialog(context, user);
 
     if (confirm == true) {
-      await usersVM.activateUser(user.uid);
-      _loadUsers();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User activated successfully')),
-        );
+      try {
+        await _authService.suspendUser(user.uid);
+        await _loadUsers();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('User suspended'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to suspend: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
 
-  Future<void> _deleteUser(Users user) async {
-    final usersVM = context.read<UsersViewModel>();
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete User'),
-        content: Text(
-          'Are you sure you want to permanently delete ${user.name}? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
+  Future<void> _handleActivate(Users user) async {
+    final confirm = await UserDialogs.showActivateDialog(context, user);
 
     if (confirm == true) {
-      await usersVM.deleteUser(user.uid);
-      _loadUsers();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User deleted successfully')),
-        );
+      try {
+        await _authService.activateUser(user.uid);
+        await _loadUsers();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('User activated'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to activate: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
-}
 
-// Icon Tab Widget
-class _IconTab extends StatelessWidget {
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
+  Future<void> _handleDelete(Users user) async {
+    final confirm = await UserDialogs.showDeleteDialog(context, user);
 
-  const _IconTab({
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: isSelected ? Colors.blue : Colors.transparent,
-                width: 3,
-              ),
+    if (confirm == true) {
+      try {
+        await _authService.permanentlyDeleteAccount(uid: user.uid);
+        await _loadUsers();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('User deleted permanently'),
+              backgroundColor: Colors.red,
             ),
-          ),
-          child: Icon(
-            icon,
-            color: isSelected ? Colors.blue : Colors.grey[600],
-            size: 28,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// User Row Widget
-class _UserRow extends StatelessWidget {
-  final Users user;
-  final VoidCallback onView;
-  final VoidCallback onSuspend;
-  final VoidCallback onActivate;
-
-  const _UserRow({
-    required this.user,
-    required this.onView,
-    required this.onSuspend,
-    required this.onActivate,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final userStatusString = user.status.toString().split('.').last;
-    final isSuspended = userStatusString.toLowerCase() == 'suspended';
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
-      ),
-      child: Row(
-        children: [
-          // User Info
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  user.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  user.email,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                ),
-              ],
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete: $e'),
+              backgroundColor: Colors.red,
             ),
-          ),
-          // Status
-          Expanded(
-            flex: 2,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: isSuspended ? Colors.red : Colors.green,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                userStatusString.toUpperCase(),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          // Join Date
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  user.joinDate.toString().split(' ')[0],
-                  style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                ),
-              ],
-            ),
-          ),
-          // Actions
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                InkWell(
-                  onTap: onView,
-                  child: const Text(
-                    'View',
-                    style: TextStyle(
-                      color: Colors.blue,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                InkWell(
-                  onTap: isSuspended ? onActivate : onSuspend,
-                  child: Text(
-                    isSuspended ? 'Activate' : 'Suspend',
-                    style: TextStyle(
-                      color: isSuspended ? Colors.green : Colors.orange,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+          );
+        }
+      }
+    }
   }
 }

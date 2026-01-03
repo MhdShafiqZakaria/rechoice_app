@@ -1,7 +1,7 @@
 // Quantity Selector Widget
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:rechoice_app/components/quantity_button.dart';
+import 'package:rechoice_app/components/dashboard/quantity_button.dart';
 import 'package:rechoice_app/models/model/cart_model.dart';
 import 'package:rechoice_app/models/viewmodels/cart_view_model.dart';
 
