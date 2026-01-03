@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:rechoice_app/components/payment_card.dart';
+import 'package:rechoice_app/components/payment/payment_card.dart';
 import 'package:rechoice_app/models/viewmodels/cart_view_model.dart';
 
 class PaymentPage extends StatefulWidget {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:rechoice_app/components/product_card.dart';
-import 'package:rechoice_app/components/search_arguments.dart';
+import 'package:rechoice_app/components/dashboard/product_card.dart';
+import 'package:rechoice_app/components/dashboard/search_arguments.dart';
 import 'package:rechoice_app/models/model/items_model.dart';
 
 class SearchResult extends StatefulWidget {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:rechoice_app/components/cart_card.dart';
+import 'package:rechoice_app/components/cart/cart_card.dart';
 import 'package:rechoice_app/models/viewmodels/cart_view_model.dart';
 
 class CartPage extends StatefulWidget {

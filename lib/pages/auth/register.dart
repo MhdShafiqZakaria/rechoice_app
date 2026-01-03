@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:rechoice_app/components/btn_google_sign_in.dart';
-import 'package:rechoice_app/components/btn_sign_in.dart';
-import 'package:rechoice_app/components/my_text_field.dart';
+import 'package:rechoice_app/components/auth/btn_google_sign_in.dart';
+import 'package:rechoice_app/components/auth/btn_sign_in.dart';
+import 'package:rechoice_app/components/auth/my_text_field.dart';
 import 'package:rechoice_app/models/viewmodels/auth_view_model.dart';
 
 class Register extends StatefulWidget {
@@ -59,8 +59,7 @@ class _RegisterState extends State<Register> {
     }
   }
 
-  //google sign in method
-  void googleSignIn() {}
+
 
   @override
   Widget build(BuildContext context) {
@@ -205,43 +204,6 @@ class _RegisterState extends State<Register> {
                                   authVM.errorMessage!,
                                   style: TextStyle(color: Colors.redAccent),
                                 ),
-                              SizedBox(height: 20),
-
-                              //or
-                              Row(
-                                children: <Widget>[
-                                  Expanded(
-                                    child: Divider(
-                                      thickness: 1,
-                                      color: Colors.grey[400],
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10.0,
-                                    ),
-                                    child: Text(
-                                      'or',
-                                      style: TextStyle(
-                                        color: Colors.grey[700],
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Divider(
-                                      thickness: 1,
-                                      color: Colors.grey[400],
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              SizedBox(height: 20),
-
-                              //google button (firebase auth)
-                              BtnGoogleSignIn(onTap: googleSignIn),
-
                               SizedBox(height: 20),
 
                               // Already have an account? Sign In textbutton

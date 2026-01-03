@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:rechoice_app/components/info_row.dart';
-import 'package:rechoice_app/components/section_card.dart';
+import 'package:rechoice_app/components/user/info_row.dart';
+import 'package:rechoice_app/components/user/section_card.dart';
 import 'package:rechoice_app/models/model/users_model.dart';
 import 'package:rechoice_app/models/viewmodels/users_view_model.dart';
 

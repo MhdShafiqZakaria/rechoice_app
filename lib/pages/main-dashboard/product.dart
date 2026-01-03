@@ -1,11 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rechoice_app/models/model/items_model.dart';
 import 'package:rechoice_app/models/services/dummy_data.dart';
 import 'package:rechoice_app/models/viewmodels/cart_view_model.dart';
 import 'package:rechoice_app/models/viewmodels/wishlist_view_model.dart';
+import 'package:rechoice_app/utils/build_item_image.dart';
 
 class Product extends StatefulWidget {
   const Product({super.key});
@@ -17,7 +16,13 @@ class Product extends StatefulWidget {
 class _ProductState extends State<Product> {
   late Items currentItem;
   Color? selectedColor;
-  final List<Color> colorOptions = [    Colors.red,    Colors.blue,    Colors.green,    Colors.yellow,    Colors.purple,  ];
+  final List<Color> colorOptions = [
+    Colors.red,
+    Colors.blue,
+    Colors.green,
+    Colors.yellow,
+    Colors.purple,
+  ];
 
   @override
   void didChangeDependencies() {
@@ -109,7 +114,7 @@ class _ProductState extends State<Product> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: _buildItemImage(currentItem.imagePath),
+                  child: buildItemImage(currentItem.imagePath, 80),
                 ),
               ),
               const SizedBox(height: 16), // Spacing
@@ -371,45 +376,6 @@ class _ProductState extends State<Product> {
       ),
     );
   }
-
-  Widget _buildItemImage(String imagePath) {
-    if (imagePath.isEmpty) {
-      return Center(
-        child: Icon(Icons.image_outlined, size: 60, color: Colors.grey),
-      );
-    }
-
-    // Local file path
-    if (imagePath.startsWith('/')) {
-      final file = File(imagePath);
-      if (file.existsSync()) {
-        return Image.file(
-          file,
-          width: double.infinity,
-          height: 180,
-          fit: BoxFit.cover,
-        );
-      }
-    }
-
-    // Network URL
-    if (imagePath.startsWith('http')) {
-      return Image.network(
-        imagePath,
-        width: double.infinity,
-        height: 180,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Center(
-          child: Icon(Icons.image_outlined, size: 60, color: Colors.grey),
-        ),
-      );
-    }
-
-    // Fallback
-    return Center(
-      child: Icon(Icons.image_outlined, size: 60, color: Colors.grey),
-    );
-  }
 }
 
 class _ColorOption extends StatelessWidget {
@@ -439,11 +405,7 @@ class _ColorOption extends StatelessWidget {
           ),
         ),
         child: isSelected
-            ? const Icon(
-                Icons.check,
-                color: Colors.white,
-                size: 24,
-              )
+            ? const Icon(Icons.check, color: Colors.white, size: 24)
             : null,
       ),
     );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:rechoice_app/components/add_product_dialog.dart';
-import 'package:rechoice_app/components/my_product_card.dart';
+import 'package:rechoice_app/components/user/add_product_dialog.dart';
+import 'package:rechoice_app/components/user/my_product_card.dart';
 import 'package:rechoice_app/models/model/users_model.dart';
 import 'package:rechoice_app/models/viewmodels/items_view_model.dart';
 

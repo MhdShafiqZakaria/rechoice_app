@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:rechoice_app/components/btn_sign_in.dart';
-import 'package:rechoice_app/components/my_text_field.dart';
+import 'package:rechoice_app/components/auth/btn_sign_in.dart';
+import 'package:rechoice_app/components/auth/my_text_field.dart';
 import 'package:rechoice_app/models/services/authenticate.dart';
 import 'package:rechoice_app/models/services/firestore_service.dart';
 import 'package:rechoice_app/pages/admin/admin_dashboard.dart';

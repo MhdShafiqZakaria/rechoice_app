@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:rechoice_app/models/model/items_model.dart';
+import 'package:rechoice_app/utils/build_item_image.dart';
 
 class ProductCard extends StatelessWidget {
   final Items items;
@@ -36,7 +35,7 @@ class ProductCard extends StatelessWidget {
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
                 ),
-                child: _buildItemImage(items.imagePath),
+                child: buildItemImage(items.imagePath, 160),
               ),
             ),
             Padding(
@@ -69,45 +68,6 @@ class ProductCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildItemImage(String imagePath) {
-    if (imagePath.isEmpty) {
-      return Center(
-        child: Icon(Icons.image_outlined, size: 60, color: Colors.grey),
-      );
-    }
-
-    // Local file path
-    if (imagePath.startsWith('/')) {
-      final file = File(imagePath);
-      if (file.existsSync()) {
-        return Image.file(
-          file,
-          width: double.infinity,
-          height: 180,
-          fit: BoxFit.cover,
-        );
-      }
-    }
-
-    // Network URL
-    if (imagePath.startsWith('http')) {
-      return Image.network(
-        imagePath,
-        width: double.infinity,
-        height: 180,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Center(
-          child: Icon(Icons.image_outlined, size: 60, color: Colors.grey),
-        ),
-      );
-    }
-
-    // Fallback
-    return Center(
-      child: Icon(Icons.image_outlined, size: 60, color: Colors.grey),
     );
   }
 }
