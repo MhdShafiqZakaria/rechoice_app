@@ -405,16 +405,16 @@ class ItemsViewModel extends ChangeNotifier {
       }
       debugPrint('Item created with ID: $itemId');
 
-      debugPrint('Step 2: Uploading image for item $itemId');
+      debugPrint('Step 2: Uploading image to Firebase Storage for item $itemId');
       final imageUrl = await _itemService.uploadItemImage(imageFile, itemId);
       if (imageUrl == null || imageUrl.isEmpty) {
         throw Exception('Failed to upload image: No URL returned');
       }
-      debugPrint('Image uploaded: $imageUrl');
+      debugPrint('Image uploaded to Firebase Storage: $imageUrl');
 
-      debugPrint('Step 3: Updating item with image URL');
+      debugPrint('Step 3: Updating item with Firebase Storage image URL');
       await _itemService.updateItem(itemId, {'image': imageUrl});
-      debugPrint('Item updated successfully');
+      debugPrint('Item updated successfully with image URL');
 
       debugPrint('Step 4: Refreshing user items for seller ${item.sellerID}');
       await fetchUserItems(item.sellerID);
