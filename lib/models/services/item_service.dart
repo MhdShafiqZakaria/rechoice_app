@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:rechoice_app/models/model/items_model.dart';
 import 'package:rechoice_app/models/services/firestore_service.dart';
 import 'package:rechoice_app/models/services/local_storage_service.dart';
@@ -13,6 +14,8 @@ class ItemService {
 
   CollectionReference get _itemsCollection =>
       _firestoreService.firestoreInstance.collection('items');
+
+  FirebaseStorage get _storage => FirebaseStorage.instance;
 
   // ==================== CREATE ====================
 
@@ -290,33 +293,61 @@ class ItemService {
     }
   }
 
-  // Saves image locally and returns the local file path
+  // ==================== IMAGE UPLOAD TO FIREBASE STORAGE ====================
+
+  // Uploads image to Firebase Storage and returns the download URL
   Future<String> uploadItemImage(File imageFile, String itemId) async {
     try {
-      return await _localStorageService.saveItemImage(imageFile, itemId);
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = '${itemId}_$timestamp.jpg';
+      final ref = _storage.ref('items/$itemId/$fileName');
+
+      // Upload file to Firebase Storage
+      final uploadTask = await ref.putFile(imageFile);
+      
+      // Get download URL
+      final downloadUrl = await uploadTask.ref.getDownloadURL();
+      
+      return downloadUrl;
     } catch (e) {
-      throw Exception('Failed to save image locally: $e');
+      throw Exception('Failed to upload image to Firebase Storage: $e');
     }
   }
 
-  // Saves multiple images locally and returns a list of local file paths
+  // Uploads multiple images to Firebase Storage and returns a list of download URLs
   Future<List<String>> uploadMultipleImages(
     List<File> imageFiles,
     String itemId,
   ) async {
     try {
-      return await _localStorageService.saveMultipleImages(imageFiles, itemId);
+      final downloadUrls = <String>[];
+      
+      for (int i = 0; i < imageFiles.length; i++) {
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final fileName = '${itemId}_${i}_$timestamp.jpg';
+        final ref = _storage.ref('items/$itemId/$fileName');
+
+        // Upload file to Firebase Storage
+        final uploadTask = await ref.putFile(imageFiles[i]);
+        
+        // Get download URL
+        final downloadUrl = await uploadTask.ref.getDownloadURL();
+        downloadUrls.add(downloadUrl);
+      }
+      
+      return downloadUrls;
     } catch (e) {
-      throw Exception('Failed to save images locally: $e');
+      throw Exception('Failed to upload images to Firebase Storage: $e');
     }
   }
 
-  // Deletes local image by itemId (assumes LocalStorageService uses itemId for keys)
+  // Deletes image from Firebase Storage
   Future<void> deleteItemImage(String itemId) async {
     try {
-      await _localStorageService.deleteItemImage(itemId);
+      final ref = _storage.ref('items/$itemId');
+      await ref.delete();
     } catch (e) {
-      throw Exception('Failed to delete local image: $e');
+      throw Exception('Failed to delete image from Firebase Storage: $e');
     }
   }
 
