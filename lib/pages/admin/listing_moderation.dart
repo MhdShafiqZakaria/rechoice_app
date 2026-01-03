@@ -26,7 +26,7 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
   void _loadMockListings() {
     // TODO: Load actual listings from Firestore
     // For now using mock data
-    filteredListings = [
+    final allListings = [
       {
         'id': 'LIST001',
         'title': 'iPhone 14 Pro',
@@ -61,6 +61,23 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
         'description': 'Wooden coffee table in good condition',
       },
     ];
+    _applyFilters(allListings);
+  }
+
+  void _applyFilters(List<Map<String, dynamic>> allListings) {
+    filteredListings = allListings.where((listing) {
+      // Search filter - check title, description, and seller name
+      final matchesSearch = searchQuery.isEmpty ||
+          listing['title'].toString().toLowerCase().contains(searchQuery.toLowerCase()) ||
+          listing['description'].toString().toLowerCase().contains(searchQuery.toLowerCase()) ||
+          listing['sellerName'].toString().toLowerCase().contains(searchQuery.toLowerCase());
+
+      // Status filter
+      final matchesStatus = selectedStatus == 'All Status' ||
+          listing['status'].toString() == selectedStatus;
+
+      return matchesSearch && matchesStatus;
+    }).toList();
   }
 
   Future<void> _exportListings() async {
@@ -116,6 +133,12 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
                 children: [
                   Expanded(
                     child: TextField(
+                      onChanged: (value) {
+                        setState(() {
+                          searchQuery = value;
+                          _loadMockListings(); // Re-apply filters with new search query
+                        });
+                      },
                       decoration: InputDecoration(
                         hintText: 'Search listings...',
                         hintStyle: TextStyle(color: Colors.grey[400]),
@@ -172,10 +195,12 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
                         ),
                       ],
                       onChanged: (value) {
-                        setState(() {
-                          selectedStatus = value!;
-                        });
-                        print('Status filter: $value');
+                        if (value != null) {
+                          setState(() {
+                            selectedStatus = value;
+                            _loadMockListings(); // Re-apply filters with new status
+                          });
+                        }
                       },
                     ),
                   ),
@@ -386,7 +411,7 @@ class _ListingRow extends StatelessWidget {
               children: [
                 InkWell(
                   onTap: () {
-                    print('View $title');
+                    // View listing logic
                   },
                   child: const Text(
                     'View',
@@ -400,7 +425,7 @@ class _ListingRow extends StatelessWidget {
                 const SizedBox(height: 4),
                 InkWell(
                   onTap: () {
-                    print('Approve $title');
+                    // Approve listing logic
                   },
                   child: const Text(
                     'Approve',
@@ -414,7 +439,7 @@ class _ListingRow extends StatelessWidget {
                 const SizedBox(height: 4),
                 InkWell(
                   onTap: () {
-                    print('Reject $title');
+                    // Reject listing logic
                   },
                   child: const Text(
                     'Reject',

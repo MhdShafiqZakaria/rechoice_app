@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:rechoice_app/components/auth/btn_sign_in.dart';
 import 'package:rechoice_app/components/auth/my_text_field.dart';
 import 'package:rechoice_app/models/services/authenticate.dart';
+import 'package:rechoice_app/utils/logger.dart';
 
 class LoginPage extends StatefulWidget {
   final VoidCallback? onPressed;
@@ -20,19 +21,18 @@ class _LoginPageState extends State<LoginPage> {
   //sign user in method
   void signUserIn() async {
     try {
-      print('DEBUG LoginPage: Starting sign in');
-      print('DEBUG LoginPage: Calling authService.login()');
+      AppLogger.debug('LoginPage: Starting sign in');
+      AppLogger.debug('LoginPage: Calling authService.login()');
       await authService.value.login(
         email: emailController.text,
         password: passwordController.text,
       );
-      print('DEBUG LoginPage: Login successful, authStateChanges will handle navigation');
+      AppLogger.debug('LoginPage: Login successful, authStateChanges will handle navigation');
       // Don't close page here - let authStateChanges handle navigation
     } on FirebaseAuthException catch (e) {
-      print('DEBUG LoginPage: FirebaseAuthException caught: ${e.code} - ${e.message}');
+      AppLogger.error('LoginPage: FirebaseAuthException caught: ${e.code}', e);
       
       if (mounted) {
-        print('DEBUG LoginPage: Showing error SnackBar');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.message ?? "Login failed"),
@@ -46,10 +46,9 @@ class _LoginPageState extends State<LoginPage> {
         });
       }
     } catch (e) {
-      print('DEBUG LoginPage: Generic exception caught: $e, Type: ${e.runtimeType}');
+      AppLogger.error('LoginPage: Generic exception caught', e);
       
       if (mounted) {
-        print('DEBUG LoginPage: Showing generic error SnackBar');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('An unexpected error occurred: ${e.toString()}'),

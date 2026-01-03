@@ -4,6 +4,30 @@ import 'package:path_provider/path_provider.dart';
 import 'package:rechoice_app/models/model/users_model.dart';
 
 class ExportUtils {
+  /// Sanitize CSV fields to prevent formula injection attacks
+  /// Prefixes cells starting with formula characters (=, +, -, @, etc.) with a single quote
+  /// This is the standard defense against CSV/Excel injection
+  static String _sanitizeCSVField(dynamic value) {
+    if (value == null) return 'N/A';
+    
+    final stringValue = value.toString().trim();
+    if (stringValue.isEmpty) return '';
+    
+    // Check if the field starts with formula injection characters
+    final firstChar = stringValue[0];
+    if (firstChar == '=' || 
+        firstChar == '+' || 
+        firstChar == '-' || 
+        firstChar == '@' ||
+        firstChar == '\t' ||
+        firstChar == '\r') {
+      // Prefix with single quote to neutralize formula execution
+      // Spreadsheet applications will treat this as literal text
+      return "'$stringValue";
+    }
+    
+    return stringValue;
+  }
   /// Export users list to CSV file
   static Future<String> exportUsersToCSV(List<Users> users) async {
     try {
@@ -29,19 +53,19 @@ class ExportUtils {
       // Add user data rows
       for (var user in users) {
         csvData.add([
-          user.userID,
-          user.name,
-          user.email,
-          user.status.toString().split('.').last,
-          user.role.toString().split('.').last,
+          _sanitizeCSVField(user.userID),
+          _sanitizeCSVField(user.name),
+          _sanitizeCSVField(user.email),
+          _sanitizeCSVField(user.status.toString().split('.').last),
+          _sanitizeCSVField(user.role.toString().split('.').last),
           user.reputationScore.toStringAsFixed(2),
           user.totalListings,
           user.totalPurchases,
           user.totalSales,
-          user.joinDate.toString().split(' ')[0],
-          user.lastLogin.toString().split(' ')[0],
-          user.phoneNumber ?? 'N/A',
-          user.address ?? 'N/A',
+          _sanitizeCSVField(user.joinDate.toString().split(' ')[0]),
+          _sanitizeCSVField(user.lastLogin.toString().split(' ')[0]),
+          _sanitizeCSVField(user.phoneNumber ?? 'N/A'),
+          _sanitizeCSVField(user.address ?? 'N/A'),
         ]);
       }
 
@@ -84,15 +108,15 @@ class ExportUtils {
       // Add listing data rows
       for (var listing in listings) {
         csvData.add([
-          listing['id'] ?? 'N/A',
-          listing['title'] ?? 'N/A',
-          listing['category'] ?? 'N/A',
+          _sanitizeCSVField(listing['id'] ?? 'N/A'),
+          _sanitizeCSVField(listing['title'] ?? 'N/A'),
+          _sanitizeCSVField(listing['category'] ?? 'N/A'),
           '\$${(listing['price'] ?? 0).toStringAsFixed(2)}',
-          listing['status'] ?? 'N/A',
-          listing['sellerName'] ?? 'N/A',
-          (listing['createdAt'] as DateTime?)?.toString().split(' ')[0] ?? 'N/A',
+          _sanitizeCSVField(listing['status'] ?? 'N/A'),
+          _sanitizeCSVField(listing['sellerName'] ?? 'N/A'),
+          _sanitizeCSVField((listing['createdAt'] as DateTime?)?.toString().split(' ')[0] ?? 'N/A'),
           listing['views'] ?? 0,
-          (listing['description'] ?? 'N/A').toString().replaceAll('\n', ' '),
+          _sanitizeCSVField((listing['description'] ?? 'N/A').toString().replaceAll('\n', ' ')),
         ]);
       }
 

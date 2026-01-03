@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:rechoice_app/models/model/users_model.dart';
 import 'package:rechoice_app/models/services/firestore_service.dart';
 
 ValueNotifier<AuthService> authService = ValueNotifier(AuthService());
@@ -78,7 +79,23 @@ class AuthService {
   // Check if user can access the app (not suspended or deleted)
   Future<bool> canAccessApp() async {
     final status = await getUserStatus();
-    return status == 'active' || status == null;
+    if (status == null) return true;
+    final userStatus = _parseUserStatus(status);
+    return userStatus == UserStatus.active;
+  }
+
+  /// Safely parse status string to UserStatus enum
+  /// Defaults to 'active' if parsing fails
+  UserStatus _parseUserStatus(String? statusString) {
+    if (statusString == null || statusString.isEmpty) {
+      return UserStatus.active;
+    }
+    try {
+      return UserStatus.values.byName(statusString.toLowerCase());
+    } catch (e) {
+      print('ERROR: Invalid UserStatus string: $statusString, defaulting to active');
+      return UserStatus.active;
+    }
   }
 
   //email sign in/login
@@ -95,26 +112,39 @@ class AuthService {
 
     print('DEBUG: Firebase Auth successful for ${userCredential.user?.uid}');
 
-    // Check user status in Firestore
+    // Check user status in Firestore with retry logic
     if (userCredential.user != null) {
+      await _checkUserStatusWithRetry(userCredential.user!.uid);
+    }
+
+    print('DEBUG: Login successful, returning credential');
+    return userCredential;
+  }
+
+  /// Checks user status with retry mechanism
+  /// Fails login on errors to prevent unauthorized access
+  Future<void> _checkUserStatusWithRetry(String uid) async {
+    const maxRetries = 3;
+    const retryDelayMs = 500; // Start with 500ms, doubles each retry
+
+    for (int attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        print('DEBUG: Checking user status in Firestore');
-        final userDoc = await _firebaseFirestore.getUser(
-          userCredential.user!.uid,
-        );
+        print('DEBUG: Checking user status in Firestore (attempt ${attempt + 1}/$maxRetries)');
+        
+        final userDoc = await _firebaseFirestore.getUser(uid);
         final userData = userDoc.data() as Map<String, dynamic>?;
 
         print('DEBUG: User data retrieved: $userData');
 
         if (userData != null) {
-          final status = userData['status'] as String?;
-          print('DEBUG: User status: $status');
+          final statusString = userData['status'] as String?;
+          final userStatus = _parseUserStatus(statusString);
+          print('DEBUG: User status: $userStatus');
 
           // Check if user is suspended
-          if (status == 'suspended') {
+          if (userStatus == UserStatus.suspended) {
             print('DEBUG: User is suspended, signing out immediately');
             await firebaseAuth.signOut();
-            print('DEBUG: Signed out, now throwing exception');
             throw FirebaseAuthException(
               code: 'user-suspended',
               message:
@@ -123,10 +153,9 @@ class AuthService {
           }
 
           // Check if user is deleted
-          if (status == 'deleted') {
+          if (userStatus == UserStatus.deleted) {
             print('DEBUG: User is deleted, signing out immediately');
             await firebaseAuth.signOut();
-            print('DEBUG: Signed out, now throwing exception');
             throw FirebaseAuthException(
               code: 'user-deleted',
               message:
@@ -137,23 +166,45 @@ class AuthService {
           // If status is 'active' or any other value, allow login
           print('DEBUG: User status is $status, allowing login');
         } else {
-          // If userData is null, allow login (new user or document issue)
-          print('DEBUG: User data is null, allowing login');
+          // If userData is null on first attempt, try again
+          // If it's the last attempt and still null, allow login (new user or document issue)
+          if (attempt == maxRetries - 1) {
+            print('DEBUG: User data is null after $maxRetries attempts, allowing login');
+          } else {
+            throw Exception('User document not found, retrying...');
+          }
         }
+        
+        // Success - exit retry loop
+        return;
+        
       } catch (e) {
-        print('DEBUG: Exception in status check: $e, Type: ${e.runtimeType}');
-        // If it's our custom error, rethrow it
-        if (e is FirebaseAuthException) {
-          print('DEBUG: Rethrowing FirebaseAuthException');
+        print('DEBUG: Exception in status check (attempt ${attempt + 1}/$maxRetries): $e');
+        
+        // If it's our custom FirebaseAuthException, rethrow immediately
+        if (e is FirebaseAuthException && 
+            (e.code == 'user-suspended' || e.code == 'user-deleted')) {
+          print('DEBUG: Rethrowing security-related FirebaseAuthException');
           rethrow;
         }
-        // For other errors, log but allow login
-        print('ERROR: Error checking user status, but allowing login: $e');
+
+        // If this is the last attempt, fail the login
+        if (attempt == maxRetries - 1) {
+          print('ERROR: Failed to verify user status after $maxRetries attempts. Login denied for security.');
+          await firebaseAuth.signOut();
+          throw FirebaseAuthException(
+            code: 'status-check-failed',
+            message:
+                'Unable to verify account status. Please check your internet connection and try again.',
+          );
+        }
+
+        // Wait before retrying with exponential backoff
+        final delayMs = retryDelayMs * (attempt + 1);
+        print('DEBUG: Retrying in ${delayMs}ms...');
+        await Future.delayed(Duration(milliseconds: delayMs));
       }
     }
-
-    print('DEBUG: Login successful, returning credential');
-    return userCredential;
   }
 
   //

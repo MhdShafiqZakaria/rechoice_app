@@ -36,7 +36,7 @@ class _CatalogsPageState extends State<CatalogsPage> {
             padding: const EdgeInsets.only(right: 12.0),
             child: TextButton(
               onPressed: () {
-                print('Clear All pressed');
+                // Clear filters logic here
               },
               style: TextButton.styleFrom(
                 backgroundColor: Colors.white,
@@ -199,7 +199,6 @@ class _CatalogsPageState extends State<CatalogsPage> {
                   setState(() {
                     selectedCondition = 'Like New';
                   });
-                  print('Like New selected');
                 },
               ),
               const SizedBox(height: 8),
@@ -210,7 +209,6 @@ class _CatalogsPageState extends State<CatalogsPage> {
                   setState(() {
                     selectedCondition = 'Excellent';
                   });
-                  print('Excellent selected');
                 },
               ),
               const SizedBox(height: 8),
@@ -221,7 +219,6 @@ class _CatalogsPageState extends State<CatalogsPage> {
                   setState(() {
                     selectedCondition = 'Good';
                   });
-                  print('Good selected');
                 },
               ),
               const SizedBox(height: 8),
@@ -232,7 +229,6 @@ class _CatalogsPageState extends State<CatalogsPage> {
                   setState(() {
                     selectedCondition = 'Fair';
                   });
-                  print('Fair selected');
                 },
               ),
               const SizedBox(height: 24),
@@ -278,7 +274,6 @@ class _CatalogsPageState extends State<CatalogsPage> {
                     setState(() {
                       selectedSort = value!;
                     });
-                    print('Sort by: $value');
                   },
                 ),
               ),
@@ -301,7 +296,7 @@ class _CatalogsPageState extends State<CatalogsPage> {
                 ),
                 child: TextButton(
                   onPressed: () {
-                    print('Apply Filters pressed');
+                    // Apply filters logic here
                   },
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -344,7 +339,7 @@ class _CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        print('$title tapped');
+        // Category tap handler
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(

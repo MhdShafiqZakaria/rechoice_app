@@ -113,9 +113,12 @@ class MainApp extends StatelessWidget {
         '/addProd': (context) => const MyProductsPage(),
         '/addNewProd': (context) => const AddProductPage(),
         '/review': (context) => const UserReviewsPage(),
-        '/adminDashboard': (context) => const AdminDashboardPage(),
-        '/listingMod': (context) => const ListingModerationPage(),
-        '/report': (context) => const ReportAnalyticsPage(),
+        '/adminDashboard': (context) =>
+            _AdminRouteGuard(child: const AdminDashboardPage()),
+        '/listingMod': (context) =>
+            _AdminRouteGuard(child: const ListingModerationPage()),
+        '/report': (context) =>
+            _AdminRouteGuard(child: const ReportAnalyticsPage()),
         '/manageUser': (context) =>
             _AdminRouteGuard(child: const UserManagementPage()),
         '/chatbot': (context) => const Chatbot(),
@@ -145,41 +148,75 @@ class _AdminRouteGuardState extends State<_AdminRouteGuard> {
   }
 
   Future<void> _checkAdminAccess() async {
-    final authService = AuthService();
-
-    if (authService.currentUser == null) {
-      _redirectToLogin();
-      return;
-    }
-
     try {
-      final isAdmin = await authService.isAdmin();
-      if (isAdmin) {
-        setState(() {
-          _hasAccess = true;
-          _isChecking = false;
-        });
-      } else {
-        _redirectToDashboard();
+      final authService = AuthService();
+
+      // Check if user is authenticated
+      if (authService.currentUser == null) {
+        // User not logged in - redirect to login
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/');
+        }
+        return;
+      }
+
+      // Check if user is admin
+      try {
+        final isAdmin = await authService.isAdmin();
+        
+        if (!mounted) return; // Widget was disposed during async operation
+
+        if (isAdmin) {
+          // User is admin - grant access
+          setState(() {
+            _hasAccess = true;
+            _isChecking = false;
+          });
+        } else {
+          // User is not admin - deny access
+          _redirectToDashboard('User does not have admin permissions');
+        }
+      } catch (e) {
+        // Error checking admin status - deny access for security
+        if (mounted) {
+          _redirectToDashboard('Unable to verify admin status: $e');
+        }
       }
     } catch (e) {
-      _redirectToDashboard();
+      // Unexpected error - deny access for security
+      if (mounted) {
+        _redirectToDashboard('An unexpected error occurred');
+      }
     }
   }
 
-  void _redirectToLogin() {
-    Navigator.of(context).pushReplacementNamed('/');
-  }
+  void _redirectToDashboard(String reason) {
+    if (!mounted) return;
 
-  void _redirectToDashboard() {
-    if (mounted) {
-      Navigator.of(context).pushReplacementNamed('/dashboard');
+    try {
+      // Show error message before navigation to ensure it displays
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Access denied: Admin only'),
+        SnackBar(
+          content: Text('Access denied: $reason'),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
         ),
       );
+
+      // Navigate after showing message (with small delay to ensure snackbar is queued)
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/dashboard');
+        }
+      });
+    } catch (e) {
+      // Fallback: navigate without snackbar if there's an error
+      try {
+        Navigator.of(context).pushReplacementNamed('/dashboard');
+      } catch (_) {
+        // If navigation fails completely, force a hard redirect
+        // This can happen if Navigator is in an invalid state
+      }
     }
   }
 

@@ -12,6 +12,7 @@ import 'package:rechoice_app/models/viewmodels/users_view_model.dart';
 import 'package:rechoice_app/models/model/users_model.dart';
 import 'package:rechoice_app/models/utils/export_utils.dart';
 import 'package:rechoice_app/pages/auth/loading_page.dart';
+import 'package:rechoice_app/utils/logger.dart';
 
 class UserManagementPage extends StatefulWidget {
   const UserManagementPage({super.key});
@@ -100,7 +101,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
         role: backendRole,
       );
     } catch (e) {
-      print('Error filtering users: $e');
+      AppLogger.error('UserManagement: Error filtering users', e);
       filteredUsers = [];
     }
   }

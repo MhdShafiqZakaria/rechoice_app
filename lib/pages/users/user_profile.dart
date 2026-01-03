@@ -8,6 +8,7 @@ import 'package:rechoice_app/components/user/profile_app_bar.dart';
 import 'package:rechoice_app/components/user/profile_info_tab.dart';
 import 'package:rechoice_app/components/user/reviews_tab.dart';
 import 'package:rechoice_app/components/user/sliver_tab_bar_delegate.dart';
+import 'package:rechoice_app/utils/logger.dart';
 import 'package:rechoice_app/models/model/users_model.dart';
 import 'package:rechoice_app/models/services/authenticate.dart';
 import 'package:rechoice_app/models/viewmodels/items_view_model.dart';
@@ -44,21 +45,17 @@ class _UserProfileState extends State<UserProfile>
   }
 
   Future<void> _loadUserData() async {
-
-
-    print('DEBUG: Starting _loadUserData');
+    AppLogger.debug('UserProfile: Starting _loadUserData');
     try {
       setState(() {
         _isLoading = true;
         _error = null;
       });
-      print('DEBUG: Set loading state');
 
       final authUid = authService.value.currentUser?.uid;
-      print('DEBUG: authUid = $authUid');
+      AppLogger.debug('UserProfile: authUid = $authUid');
 
       if (authUid == null) {
-        print('DEBUG: No authUid, setting error');
         setState(() {
           _error = 'Not authenticated';
           _isLoading = false;
@@ -67,25 +64,23 @@ class _UserProfileState extends State<UserProfile>
       }
 
       final profileUid = widget.uid ?? authUid;
-      print('DEBUG: profileUid = $profileUid');
+      AppLogger.debug('UserProfile: profileUid = $profileUid');
 
       final usersVM = context.read<UsersViewModel>();
       final itemsVM = context.read<ItemsViewModel>();
-      print('DEBUG: Got ViewModels');
 
       // Check cache first
       Users? user = usersVM.getUserByUid(profileUid);
-      print('DEBUG: User from cache = ${user != null}');
+      AppLogger.debug('UserProfile: User from cache = ${user != null}');
 
       // If not in cache, fetch from Firestore
       if (user == null) {
-        print('DEBUG: Fetching user from Firestore...');
+        AppLogger.debug('UserProfile: Fetching user from Firestore...');
         user = await usersVM.fetchUserByUid(profileUid);
-        print('DEBUG: Fetched user = ${user != null}');
+        AppLogger.debug('UserProfile: Fetched user = ${user != null}');
       }
 
       if (user == null) {
-        print('DEBUG: User not found, setting error');
         setState(() {
           _error = 'User not found in database';
           _isLoading = false;
@@ -95,7 +90,7 @@ class _UserProfileState extends State<UserProfile>
 
       // Load user items
       if (!_hasLoadedItems) {
-        print('DEBUG: Fetching user items...');
+        AppLogger.debug('UserProfile: Fetching user items...');
         _hasLoadedItems = true;
         await itemsVM
             .fetchUserItems(user.userID)
@@ -105,10 +100,10 @@ class _UserProfileState extends State<UserProfile>
                 throw TimeoutException('Item Fetch timed out');
               },
             );
-        print('DEBUG: Fetched user items');
+        AppLogger.debug('UserProfile: Fetched user items');
       }
 
-      print('DEBUG: All data loaded, setting state');
+      AppLogger.debug('UserProfile: All data loaded, setting state');
       if (mounted) {
         setState(() {
           _user = user;
@@ -116,7 +111,7 @@ class _UserProfileState extends State<UserProfile>
         });
       }
     } catch (e) {
-      print('DEBUG: Exception in _loadUserData: $e');
+      AppLogger.error('UserProfile: Exception in _loadUserData', e);
       if (mounted) {
         setState(() {
           _error = 'Failed to load profile: $e';
