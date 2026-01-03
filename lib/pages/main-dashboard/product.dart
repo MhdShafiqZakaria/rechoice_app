@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rechoice_app/models/model/items_model.dart';
-import 'package:rechoice_app/models/viewmodels/cart.view_model.dart';
+import 'package:rechoice_app/models/services/dummy_data.dart';
+import 'package:rechoice_app/models/viewmodels/cart_view_model.dart';
 import 'package:rechoice_app/models/viewmodels/wishlist_view_model.dart';
-import 'package:rechoice_app/services/dummy_data.dart';
+import 'package:rechoice_app/utils/build_item_image.dart';
+import 'package:rechoice_app/pages/payment/payment.dart';
+
 
 class Product extends StatefulWidget {
   const Product({super.key});
@@ -13,8 +16,15 @@ class Product extends StatefulWidget {
 }
 
 class _ProductState extends State<Product> {
-  int _quantity = 1;
   late Items currentItem;
+  Color? selectedColor;
+  final List<Color> colorOptions = [
+    Colors.red,
+    Colors.blue,
+    Colors.green,
+    Colors.yellow,
+    Colors.purple,
+  ];
 
   @override
   void didChangeDependencies() {
@@ -31,6 +41,11 @@ class _ProductState extends State<Product> {
 
   @override
   Widget build(BuildContext context) {
+    final CartViewModel cartVM = Provider.of<CartViewModel>(
+      context,
+      listen: false,
+    );
+
     return Scaffold(
       //App Bar
       appBar: AppBar(
@@ -101,10 +116,7 @@ class _ProductState extends State<Product> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(
-                    currentItem.imagePath,
-                    fit: BoxFit.contain,
-                  ),
+                  child: buildItemImage(currentItem.imagePath, 80),
                 ),
               ),
               const SizedBox(height: 16), // Spacing
@@ -166,7 +178,7 @@ class _ProductState extends State<Product> {
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Option',
+                  'Color',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -180,39 +192,67 @@ class _ProductState extends State<Product> {
               // Row dengan 3 container
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Expanded(child: _CategoryButton(label: 'iPad Air')),
-                  SizedBox(width: 8),
-                  Expanded(child: _CategoryButton(label: 'iPad Pro')),
-                  SizedBox(width: 8),
-                  Expanded(child: _CategoryButton(label: 'iPad Mini')),
-                ],
+                children: colorOptions
+                    .map(
+                      (color) => _ColorOption(
+                        color: color,
+                        isSelected: selectedColor == color,
+                        onTap: () {
+                          setState(() {
+                            selectedColor = color;
+                          });
+                        },
+                      ),
+                    )
+                    .toList(),
               ),
               const SizedBox(height: 16),
 
               //Quantity
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Quantity',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+              Row(
+                children: [
+                  const Text(
+                    'Quantity',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
-                ),
-              ),
-              const SizedBox(height: 1),
+                  const Spacer(),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        //Minus button
+                        IconButton(
+                          icon: const Icon(Icons.remove),
+                          onPressed: () => cartVM.decreaseQuantity(currentItem),
+                        ),
 
-              // Quantity buttons
-              _QuantitySelector(
-                quantity: _quantity,
-                onChanged: (newQuantity) {
-                  setState(() {
-                    _quantity = newQuantity;
-                  });
-                },
-                maxQuantity: currentItem.quantity,
+                        Consumer<CartViewModel>(
+                          builder: (context, cartVM, child) {
+                            final quantity = cartVM.getItemQuantity(
+                              currentItem.itemID,
+                            );
+                            return Text(
+                              quantity.toString(),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            );
+                          },
+                        ),
+
+                        //Plus button
+                        IconButton(
+                          icon: const Icon(Icons.add),
+                          onPressed: () => cartVM.addToCart(currentItem),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 16),
@@ -310,7 +350,24 @@ class _ProductState extends State<Product> {
                 ),
                 const SizedBox(width: 8),
                 InkWell(
-                  onTap: () {},
+                  onTap: () {
+                    final cartVM = Provider.of<CartViewModel>(
+                      context,
+                      listen: false,
+                    );
+
+                    // ✅ PaymentPage uses cart → prepare cart here
+                    cartVM.clearCart();              // 1️⃣ clear old items
+                    cartVM.addToCart(currentItem);   // 2️⃣ add this product
+
+                    // 3️⃣ go to PaymentPage
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PaymentPage(),
+                      ),
+                    );
+                  },
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -340,84 +397,36 @@ class _ProductState extends State<Product> {
   }
 }
 
-//class option button
-class _CategoryButton extends StatelessWidget {
-  final String label;
+class _ColorOption extends StatelessWidget {
+  final Color color;
+  final bool isSelected;
+  final VoidCallback onTap;
 
-  const _CategoryButton({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {},
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 255, 255, 255),
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.shade700,
-              spreadRadius: 2,
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: Colors.blue,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-//class quantity button
-class _QuantitySelector extends StatelessWidget {
-  final int quantity;
-  final Function(int) onChanged;
-  final int maxQuantity;
-
-  const _QuantitySelector({
-    required this.quantity,
-    required this.onChanged,
-    required this.maxQuantity,
+  const _ColorOption({
+    required this.color,
+    required this.isSelected,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        IconButton(
-          onPressed: quantity > 1 ? () => onChanged(quantity - 1) : null,
-          icon: const Icon(Icons.remove_circle_outline),
-          color: quantity > 1 ? Colors.blue : Colors.grey,
-          iconSize: 32,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isSelected ? Colors.blue : Colors.transparent,
+            width: 3,
+          ),
         ),
-        const SizedBox(width: 16),
-        Text(
-          '$quantity',
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(width: 16),
-        IconButton(
-          onPressed: quantity < maxQuantity
-              ? () => onChanged(quantity + 1)
-              : null,
-          icon: const Icon(Icons.add_circle_outline),
-          color: quantity < maxQuantity ? Colors.blue : Colors.grey,
-          iconSize: 32,
-        ),
-      ],
+        child: isSelected
+            ? const Icon(Icons.check, color: Colors.white, size: 24)
+            : null,
+      ),
     );
   }
 }
