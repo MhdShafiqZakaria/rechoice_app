@@ -42,6 +42,16 @@ class _RegisterState extends State<Register> {
       return;
     }
 
+    if (passwordController.text.trim().length < 6) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(
+            SnackBar(content: Text('Password must be at least 6 characters')));
+      }
+      return;
+    }
+
     final authVM = context.read<AuthViewModel>();
     try {
       await authVM.register(
