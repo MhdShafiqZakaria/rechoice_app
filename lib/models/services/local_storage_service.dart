@@ -1,110 +1,42 @@
 import 'dart:io';
-import 'package:hive_ce_flutter/adapters.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+import 'package:synchronized/synchronized.dart';
 
 class LocalStorageService {
   static const String _imageBoxName = 'item_images';
   late Box<String> _imageBox;
   bool _isInitialized = false;
 
-  // ==================== INITIALIZATION ====================
+  final _initLock = Lock();
+  final _saveLocks = <String, Lock>{};
 
   Future<void> init() async {
     if (_isInitialized) return;
 
-    try {
+    await _initLock.synchronized(() async {
+      if (_isInitialized) return;
       await Hive.initFlutter();
       _imageBox = await Hive.openBox<String>(_imageBoxName);
-      _isInitialized = true;
-      print('✅ Image box initialized successfully');
-      // Debug: Print the path
-      print('=== HIVE BOX PATH ===');
-      print('Box path: ${_imageBox.path}');
-      print('Box name: ${_imageBox.name}');
-      print('====================');
-    } catch (e) {
-      print('❌ Failed to initialize image box: $e');
-      rethrow;
-    }
-  }
 
-  // ==================== IMAGE STORAGE ====================
+      _isInitialized = true;
+      // Fixed: Get appDir before using it
+      final appDir = await getApplicationDocumentsDirectory();
+      print('=== STORAGE PATHS ===');
+      print('App directory: ${appDir.path}');
+      print('Hive box: ${_imageBox.path}');
+      print('Images folder: ${appDir.path}/item_images');
+      print('====================');
+    });
+  }
 
   Future<String> saveItemImage(File imageFile, String itemId) async {
-    if (!_isInitialized) {
-      await init();
-    }
+    final lock = _saveLocks.putIfAbsent(itemId, () => Lock());
     try {
-      final appDir = await getApplicationDocumentsDirectory();
-      final imageDir = Directory(path.join(appDir.path, 'item_images'));
+      return await lock.synchronized(() async {
+        if (!_isInitialized) await init();
 
-      if (!await imageDir.exists()) {
-        await imageDir.create(recursive: true);
-      }
-
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = '${itemId}_$timestamp.jpg';
-      final savedPath = path.join(imageDir.path, fileName);
-
-      await imageFile.copy(savedPath);
-
-      // Store path in Hive synchronously
-      _imageBox.put(itemId, savedPath);
-
-      return savedPath;
-    } catch (e) {
-      throw Exception('Failed to save image locally: $e');
-    }
-  }
-
-  String? getItemImagePath(String itemId) {
-    if (!_isInitialized) return null;
-
-    return _imageBox.get(itemId);
-  }
-
-  File? getItemImageFile(String itemId) {
-    if (!_isInitialized) return null;
-    try {
-      final imagePath = getItemImagePath(itemId);
-      if (imagePath == null) return null;
-
-      final file = File(imagePath);
-      return file.existsSync() ? file : null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<void> deleteItemImage(String itemId) async {
-    if (!_isInitialized) {
-      await init();
-    }
-    try {
-      final imagePath = getItemImagePath(itemId);
-      if (imagePath != null) {
-        final file = File(imagePath);
-        if (await file.exists()) {
-          await file.delete();
-        }
-        _imageBox.delete(itemId);
-      }
-    } catch (e) {
-      throw Exception('Failed to delete image: $e');
-    }
-  }
-
-  Future<List<String>> saveMultipleImages(
-    List<File> imageFiles,
-    String itemId,
-  ) async {
-    if(!_isInitialized) await init();
-    try {
-      final savedPaths = <String>[];
-
-      for (var i = 0; i < imageFiles.length; i++) {
         final appDir = await getApplicationDocumentsDirectory();
         final imageDir = Directory(path.join(appDir.path, 'item_images'));
 
@@ -113,116 +45,178 @@ class LocalStorageService {
         }
 
         final timestamp = DateTime.now().millisecondsSinceEpoch;
-        final fileName = '${itemId}_${i}_$timestamp.jpg';
+        final fileName = '${itemId}_$timestamp.jpg';
         final savedPath = path.join(imageDir.path, fileName);
 
-        await imageFiles[i].copy(savedPath);
-        savedPaths.add(savedPath);
-      }
+        await imageFile.copy(savedPath);
+        await _imageBox.put(itemId, savedPath);
 
-      // Store first image path as primary
-      if (savedPaths.isNotEmpty) {
-        _imageBox.put(itemId, savedPaths.first);
-      }
-
-      return savedPaths;
-    } catch (e) {
-      throw Exception('Failed to save multiple images: $e');
+        return savedPath;
+      });
+    } finally {
+      _saveLocks.remove(itemId);
     }
   }
 
-  // ==================== BULK OPERATIONS ====================
+  String? getItemImagePath(String itemId) {
+    if (!_isInitialized) return null;
+    return _imageBox.get(itemId);
+  }
+
+  File? getItemImageFile(String itemId) {
+    if (!_isInitialized) return null;
+    final imagePath = getItemImagePath(itemId);
+    if (imagePath == null) return null;
+
+    final file = File(imagePath);
+    return file.existsSync() ? file : null;
+  }
+
+  Future<void> deleteItemImage(String itemId) async {
+    final lock = _saveLocks.putIfAbsent(itemId, () => Lock());
+    try {
+      await lock.synchronized(() async {
+        if (!_isInitialized) await init();
+
+        final imagePath = getItemImagePath(itemId);
+        if (imagePath != null) {
+          final file = File(imagePath);
+          if (await file.exists()) await file.delete();
+          await _imageBox.delete(itemId);
+        }
+      });
+    } finally {
+      _saveLocks.remove(itemId);
+    }
+  }
+
+  Future<List<String>> saveMultipleImages(
+    List<File> imageFiles,
+    String itemId,
+  ) async {
+    final lock = _saveLocks.putIfAbsent(itemId, () => Lock());
+    try {
+      return await lock.synchronized(() async {
+        if (!_isInitialized) await init();
+
+        final appDir = await getApplicationDocumentsDirectory();
+        final imageDir = Directory(path.join(appDir.path, 'item_images'));
+
+        if (!await imageDir.exists()) {
+          await imageDir.create(recursive: true);
+        }
+
+        final savedPaths = <String>[];
+        for (var i = 0; i < imageFiles.length; i++) {
+          final timestamp = DateTime.now().millisecondsSinceEpoch;
+          final fileName = '${itemId}_${i}_$timestamp.jpg';
+          final savedPath = path.join(imageDir.path, fileName);
+
+          await imageFiles[i].copy(savedPath);
+          savedPaths.add(savedPath);
+        }
+
+        if (savedPaths.isNotEmpty) {
+          await _imageBox.put(itemId, savedPaths.first);
+        }
+
+        return savedPaths;
+      });
+    } finally {
+      _saveLocks.remove(itemId);
+    }
+  }
 
   List<String> getAllItemIds() {
+    if (!_isInitialized) return [];
     return _imageBox.keys.cast<String>().toList();
   }
 
-  Map<String, String> getAllImagePaths() {
-    return Map<String, String>.from(_imageBox.toMap());
-  }
-
-  int get imageCount => _imageBox.length;
+  int get imageCount => _isInitialized ? _imageBox.length : 0;
 
   bool hasImage(String itemId) {
+    if (!_isInitialized) return false;
     return _imageBox.containsKey(itemId);
   }
 
-  void clearAll() {
-    _imageBox.clear();
+  Future<void> clearAll() async {
+    if (!_isInitialized) await init();
+
+    // Delete all files
+    final appDir = await getApplicationDocumentsDirectory();
+    final imageDir = Directory(path.join(appDir.path, 'item_images'));
+
+    if (await imageDir.exists()) {
+      await imageDir.delete(recursive: true);
+    }
+
+    // Clear Hive
+    await _imageBox.clear();
   }
 
-  // ==================== CLEANUP ====================
-
   Future<void> cleanupOrphanedImages(List<String> activeItemIds) async {
-    try {
-      final appDir = await getApplicationDocumentsDirectory();
-      final imageDir = Directory(path.join(appDir.path, 'item_images'));
+    if (!_isInitialized) await init();
 
-      if (!await imageDir.exists()) return;
+    final appDir = await getApplicationDocumentsDirectory();
+    final imageDir = Directory(path.join(appDir.path, 'item_images'));
 
-      // Clean up Hive entries
-      final allKeys = _imageBox.keys.cast<String>().toList();
-      for (var key in allKeys) {
-        if (!activeItemIds.contains(key)) {
-          final imagePath = _imageBox.get(key);
-          if (imagePath != null) {
-            final file = File(imagePath);
-            if (await file.exists()) {
-              await file.delete();
-            }
-          }
-          _imageBox.delete(key);
+    if (!await imageDir.exists()) return;
+
+    // Clean Hive entries
+    final allKeys = _imageBox.keys.cast<String>().toList();
+    for (var key in allKeys) {
+      if (!activeItemIds.contains(key)) {
+        final imagePath = _imageBox.get(key);
+        if (imagePath != null) {
+          final file = File(imagePath);
+          if (await file.exists()) await file.delete();
+        }
+        await _imageBox.delete(key);
+      }
+    }
+
+    // Clean orphaned files
+    await for (var entity in imageDir.list()) {
+      if (entity is File) {
+        final fileName = path.basename(entity.path);
+        final itemId = fileName.split('_').first;
+
+        if (!activeItemIds.contains(itemId)) {
+          await entity.delete();
         }
       }
-
-      // Clean up orphaned files
-      final allFiles = await imageDir.list().toList();
-      for (var fileEntity in allFiles) {
-        if (fileEntity is File) {
-          final fileName = path.basename(fileEntity.path);
-          final itemId = fileName.split('_').first;
-
-          if (!activeItemIds.contains(itemId)) {
-            await fileEntity.delete();
-          }
-        }
-      }
-    } catch (e) {
-      print('Failed to cleanup orphaned images: $e');
     }
   }
 
   Future<int> getTotalStorageSize() async {
-    try {
-      final appDir = await getApplicationDocumentsDirectory();
-      final imageDir = Directory(path.join(appDir.path, 'item_images'));
+    final appDir = await getApplicationDocumentsDirectory();
+    final imageDir = Directory(path.join(appDir.path, 'item_images'));
 
-      if (!await imageDir.exists()) return 0;
+    if (!await imageDir.exists()) return 0;
 
-      int totalSize = 0;
-      final files = await imageDir.list().toList();
-
-      for (var fileEntity in files) {
-        if (fileEntity is File) {
-          totalSize += await fileEntity.length();
-        }
+    int totalSize = 0;
+    await for (var entity in imageDir.list()) {
+      if (entity is File) {
+        totalSize += await entity.length();
       }
-
-      return totalSize;
-    } catch (e) {
-      return 0;
     }
+
+    return totalSize;
   }
 
   String formatStorageSize(int bytes) {
+    if (bytes < 0) return '0 B';
     if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(2)} KB';
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(2)} KB';
+    }
     return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
   }
 
-  // ==================== DISPOSAL ====================
-
   Future<void> dispose() async {
-    await _imageBox.close();
+    if (_isInitialized) {
+      await _imageBox.close();
+      _isInitialized = false;
+    }
   }
 }

@@ -7,47 +7,42 @@ class FirestoreService {
 
   // ==================== USERS CRUD OPERATIONS ====================
 
-  //Create User function
   Future<void> createUser({
     required String uid,
     required String name,
     required String email,
   }) async {
-    //Get the next userID (auto-increment)
-    final counterRef = _db.collection('metadata').doc('userCounter');
-    int nextUserID = 1;
+    await _db.runTransaction((transaction) async {
+      final counterRef = _db.collection('metadata').doc('userCounter');
+      final counterDoc = await transaction.get(counterRef);
 
-    try {
-      final counterDoc = await counterRef.get();
+      int nextUserID = 1;
       if (counterDoc.exists) {
         nextUserID = (counterDoc.data()?['count'] ?? 0) + 1;
       }
-      //increment counter
-      await counterRef.set({'count': nextUserID});
-    } catch (e) {
-      print('Error getting userID: $e');
-    }
 
-    //create user document
-    await _db.collection('users').doc(uid).set({
-      'userID': nextUserID,
-      'name': name,
-      'email': email,
-      'profilePic': '',
-      'bio': '',
-      'reputationScore': 0.0,
-      'status': 'active',
-      'joinDate': FieldValue.serverTimestamp(),
-      'lastLogin': FieldValue.serverTimestamp(),
-      'role': 'buyer',
-      'totalListings': 0,
-      'totalPurchases': 0,
-      'totalSales': 0,
-      'phoneNumber': null,
-      'address': null,
+      transaction.set(counterRef, {'count': nextUserID});
+
+      transaction.set(_db.collection('users').doc(uid), {
+        'userID': nextUserID,
+        'name': name,
+        'email': email,
+        'profilePic': '',
+        'bio': '',
+        'reputationScore': 0.0,
+        'status': 'active',
+        'joinDate': FieldValue.serverTimestamp(),
+        'lastLogin': FieldValue.serverTimestamp(),
+        'role': 'buyer',
+        'totalListings': 0,
+        'totalPurchases': 0,
+        'totalSales': 0,
+        'phoneNumber': null,
+        'address': null,
+      });
     });
 
-    print('✅ User document created for $email with userID: $nextUserID');
+    print('✅ User document created for $email');
   }
 
   //

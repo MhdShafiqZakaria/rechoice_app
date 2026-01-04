@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rechoice_app/models/model/items_model.dart';
+import 'package:rechoice_app/utils/build_item_image.dart';
 
 class MyProductCard extends StatelessWidget {
   final Items item;
@@ -20,25 +21,38 @@ class MyProductCard extends StatelessWidget {
             Expanded(
               child: Stack(
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(12),
-                      ),
-                      color: Colors.grey.shade200,
-                      image: item.hasImage
-                          ? DecorationImage(
-                              image: NetworkImage(item.imagePath),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
                     ),
-                    child: !item.hasImage
-                        ? const Center(
-                            child: Icon(Icons.image_not_supported, size: 40),
-                          )
-                        : null,
+                    child: Container(
+                      width: double.infinity,
+                      color: Colors.grey.shade200,
+                      child: buildItemImage(
+                        item.hasImage ? item.imagePath : '',
+                        double.infinity,
+                      ),
+                    ),
                   ),
+                  // Container(
+                  //   decoration: BoxDecoration(
+                  //     borderRadius: const BorderRadius.vertical(
+                  //       top: Radius.circular(12),
+                  //     ),
+                  //     color: Colors.grey.shade200,
+                  //     image: item.hasImage
+                  //         ? DecorationImage(
+                  //             image: NetworkImage(item.imagePath),
+                  //             fit: BoxFit.cover,
+                  //           )
+                  //         : null,
+                  //   ),
+                  //   child: !item.hasImage
+                  //       ? const Center(
+                  //           child: Icon(Icons.image_not_supported, size: 40),
+                  //         )
+                  //       : null,
+                  // ),
                   Positioned(
                     top: 8,
                     right: 8,

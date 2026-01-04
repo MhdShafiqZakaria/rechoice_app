@@ -25,7 +25,7 @@ class ItemService {
       int nextItemID = 1;
       final counterDoc = await counterRef.get();
       if (counterDoc.exists) {
-        final data = counterDoc.data() as Map<String, dynamic>?;
+        final data = counterDoc.data();
         nextItemID = (data?['count'] ?? 0) + 1;
       }
 

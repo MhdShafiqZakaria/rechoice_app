@@ -20,23 +20,36 @@ class CategoryService {
     required String iconName,
   }) async {
     try {
-      final counterRef = _metadataCollection.doc('categoryCounter');
-      int nextCategoryID = 1;
-
-      final counterDoc = await counterRef.get();
-      if (counterDoc.exists) {
-        final data = counterDoc.data() as Map<String, dynamic>?;
-        nextCategoryID = (data?['count'] ?? 0) + 1;
+      // Check if already exists first
+      if (await categoryExists(name)) {
+        throw Exception('Category "$name" already exists');
       }
-      await counterRef.set({'count': nextCategoryID});
 
-      final docRef = await _categoriesCollection.add({
-        'categoryID': nextCategoryID,
-        'name': name,
-        'iconName': iconName,
+      return await _firestoreService.firestoreInstance.runTransaction<String>((
+        transaction,
+      ) async {
+        final counterRef = _metadataCollection.doc('categoryCounter');
+        final counterDoc = await transaction.get(counterRef);
+
+        int nextCategoryID = 1;
+        if (counterDoc.exists) {
+          final data = counterDoc.data() as Map<String, dynamic>?;
+          nextCategoryID = (data?['count'] ?? 0) + 1;
+        }
+
+        // Atomically update counter
+        transaction.set(counterRef, {'count': nextCategoryID});
+
+        // Create category document
+        final newDocRef = _categoriesCollection.doc();
+        transaction.set(newDocRef, {
+          'categoryID': nextCategoryID,
+          'name': name,
+          'iconName': iconName,
+        });
+
+        return newDocRef.id;
       });
-
-      return docRef.id;
     } catch (e) {
       throw Exception('Failed to create category: $e');
     }
@@ -160,13 +173,10 @@ class CategoryService {
       // Explicitly typed to fix the '[]' operator error on Object
       final defaultCategories = <Map<String, String>>[
         {'name': 'Electronics', 'iconName': 'electronics'},
-        {'name': 'Clothing', 'iconName': 'clothing'},
-        {'name': 'Books', 'iconName': 'books'},
-        {'name': 'Home & Garden', 'iconName': 'home'},
-        {'name': 'Sports', 'iconName': 'sports'},
-        {'name': 'Toys', 'iconName': 'toys'},
-        {'name': 'Beauty', 'iconName': 'beauty'},
-        {'name': 'Automotive', 'iconName': 'automotive'},
+        {'name': 'Fashion', 'iconName': 'fashions'},
+        {'name': 'Personal Care', 'iconName': 'brush'},
+        {'name': 'Book/Study', 'iconName': 'books'},
+        {'name': 'Home/Living', 'iconName': 'files'},
       ];
 
       for (final category in defaultCategories) {
@@ -174,6 +184,7 @@ class CategoryService {
         final iconName = category['iconName'];
         if (name != null && iconName != null) {
           await createCategory(name: name, iconName: iconName);
+          await Future.delayed(Duration(milliseconds: 100)); // Add small delay
         }
       }
 

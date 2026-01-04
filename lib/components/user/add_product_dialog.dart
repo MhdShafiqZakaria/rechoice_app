@@ -43,7 +43,6 @@ class _AddProductDialogState extends State<AddProductDialog> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CategoryViewModel>().fetchCategories();
       _loadCategories();
     });
   }
@@ -67,33 +66,21 @@ class _AddProductDialogState extends State<AddProductDialog> {
 
     if (mounted) {
       setState(() {
-        _categories = categoryVM.categories.isNotEmpty
-            ? categoryVM.categories
-            : _getFallbackCategories();
+        _categories = categoryVM.categories;
+
         _loadingCategories = false;
+        // Debug: Check for duplicates
+        print('Total categories: ${_categories.length}');
+        for (var cat in _categories) {
+          print('Category: ${cat.categoryID} - ${cat.name}');
+        }
       });
     }
-  }
-
-  List<ItemCategoryModel> _getFallbackCategories() {
-    return [
-      ItemCategoryModel(
-        categoryID: 1,
-        name: 'Electronics',
-        iconName: 'electronics',
-      ),
-      ItemCategoryModel(categoryID: 2, name: 'Clothing', iconName: 'clothing'),
-      ItemCategoryModel(categoryID: 3, name: 'Books', iconName: 'books'),
-      ItemCategoryModel(categoryID: 4, name: 'Home & Garden', iconName: 'home'),
-      ItemCategoryModel(categoryID: 5, name: 'Sports', iconName: 'sports'),
-    ];
   }
 
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-    
-
       setState(() => _image = File(pickedFile.path));
     }
   }
