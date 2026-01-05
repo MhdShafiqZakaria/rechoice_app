@@ -249,6 +249,7 @@ class _UserProfileState extends State<UserProfile>
             isOwnProfile: isOwnProfile,
             onEditPressed: _editProfile,
             onLogoutPressed: _logout,
+            onBackPressed: widget.onBackPressed,
           ),
           SliverPersistentHeader(
             pinned: true,
