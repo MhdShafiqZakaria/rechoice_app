@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:rechoice_app/models/model/items_model.dart';
 import 'package:rechoice_app/models/model/listing_model.dart';
 import 'package:rechoice_app/models/model/users_model.dart';
-import 'package:rechoice_app/models/services/dummy_data.dart';
 import 'package:rechoice_app/models/services/firestore_service.dart';
 import 'package:rechoice_app/models/services/item_service.dart';
 

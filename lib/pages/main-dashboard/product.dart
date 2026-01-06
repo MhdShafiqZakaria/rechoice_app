@@ -363,12 +363,18 @@ class _ProductState extends State<Product> {
                       color: Colors.blue,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text(
-                      'Buy Now',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                    child: GestureDetector(
+                      onTap: () {
+                        cartVM.addToCart(currentItem);
+                        Navigator.pushNamed(context, '/payment');
+                      },
+                      child: const Text(
+                        'Buy Now',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ),

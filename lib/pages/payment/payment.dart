@@ -244,7 +244,7 @@ class _PaymentPageState extends State<PaymentPage> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.grey.withOpacity(0.1),
+                                color: Colors.grey,
                                 spreadRadius: 2,
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
@@ -274,7 +274,7 @@ class _PaymentPageState extends State<PaymentPage> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       const Text(
-                                        'Syafiq',
+                                        'Shafiq',
                                         style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,

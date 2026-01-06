@@ -219,6 +219,7 @@ class _LoginPageState extends State<LoginPage> {
                               hintText: 'Enter your password',
                               obscureText: true,
                               icon: Icons.lock,
+                              showVisibilityToggle: true,
                             ),
 
                             SizedBox(height: 10),

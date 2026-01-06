@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -18,7 +20,6 @@ import 'package:rechoice_app/pages/admin/report_analytics.dart';
 import 'package:rechoice_app/pages/admin/user_management.dart';
 import 'package:rechoice_app/pages/ai-features/chatbot.dart';
 import 'package:rechoice_app/pages/auth/auth_gate.dart';
-import 'package:rechoice_app/pages/auth/change_password.dart';
 import 'package:rechoice_app/pages/auth/loading_page.dart';
 import 'package:rechoice_app/pages/auth/login_admin.dart';
 import 'package:rechoice_app/pages/auth/login_page.dart';
@@ -43,6 +44,11 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+    // Force logout in debug mode to ensure clean state on each dev run
+  if (kDebugMode) {
+    await FirebaseAuth.instance.signOut();
+  }
 
   final loadStorageService = LocalStorageService();
   await loadStorageService.init();
@@ -92,7 +98,7 @@ class MainApp extends StatelessWidget {
       title: 'ReChoice',
       debugShowCheckedModeBanner: false,
       //start the app from authGate page
-      initialRoute: '/chatbot',
+      initialRoute: '/',
 
       //routes for navigation between pages
       routes: {
@@ -101,7 +107,6 @@ class MainApp extends StatelessWidget {
         '/register': (context) => Register(),
         '/admin': (context) => const AdminLoginPage(),
         '/resetPW': (context) => const ResetPassword(),
-        '/changePW': (context) => const ChangePassword(),
         '/dashboard': (context) => const Dashboard(),
         '/catalog': (context) => const CatalogsPage(),
         '/search': (context) => SearchResult(searchResults: []),
@@ -165,7 +170,7 @@ class _AdminRouteGuardState extends State<_AdminRouteGuard> {
       // Check if user is admin
       try {
         final isAdmin = await authService.isAdmin();
-        
+
         if (!mounted) return; // Widget was disposed during async operation
 
         if (isAdmin) {

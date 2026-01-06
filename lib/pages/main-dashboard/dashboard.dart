@@ -38,7 +38,7 @@ class _DashboardState extends State<Dashboard> {
 
   void _initializeServices() {
     final firestoreService = FirestoreService();
-    final itemService = ItemService(FirestoreService(),LocalStorageService());
+    final itemService = ItemService(FirestoreService(), LocalStorageService());
     _listingService = ListingService(firestoreService, itemService);
     _categoryService = CategoryService(firestoreService);
   }
@@ -57,10 +57,10 @@ class _DashboardState extends State<Dashboard> {
 
       // Fetch all listings from Firebase (using getAllListings for debugging)
       // Note: Replace with getApprovedListings() once your items have proper moderation status
-      final listings = await _listingService.getAllListings();
+      final listings = await _listingService.getApprovedListings();
       _allProducts = listings.map((listing) => listing.item).toList();
       _filteredProducts = _allProducts;
-      
+
       print('DEBUG: Loaded ${_allProducts.length} products');
       if (_allProducts.isNotEmpty) {
         print('DEBUG: First product: ${_allProducts[0].title}');
@@ -130,7 +130,6 @@ class _DashboardState extends State<Dashboard> {
 
   void _navigateToProductDetail(Items item) {
     Navigator.pushNamed(context, '/product', arguments: item);
-
   }
 
   void _showProfileMenu() {
@@ -433,77 +432,77 @@ class _DashboardState extends State<Dashboard> {
                       ),
                     )
                   : _loadError != null
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                size: 64,
-                                color: Colors.red.shade400,
-                              ),
-                              SizedBox(height: 16),
-                              Text(
-                                _loadError!,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.red.shade600,
-                                ),
-                              ),
-                              SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: _loadData,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue.shade700,
-                                ),
-                                child: Text(
-                                  'Retry',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.red.shade400,
                           ),
-                        )
-                      : _filteredProducts.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.search_off,
-                                    size: 64,
-                                    color: Colors.grey.shade400,
-                                  ),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    'No products found',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : GridView.builder(
-                              padding: const EdgeInsets.all(16),
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                childAspectRatio: 0.68,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
-                              ),
-                              itemCount: _filteredProducts.length,
-                              itemBuilder: (context, index) {
-                                return ProductCard(
-                                  items: _filteredProducts[index],
-                                  onTap: () => _navigateToProductDetail(
-                                    _filteredProducts[index],
-                                  ),
-                                );
-                              },
+                          SizedBox(height: 16),
+                          Text(
+                            _loadError!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.red.shade600,
                             ),
+                          ),
+                          SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadData,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue.shade700,
+                            ),
+                            child: Text(
+                              'Retry',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _filteredProducts.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 64,
+                            color: Colors.grey.shade400,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'No products found',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : GridView.builder(
+                      padding: const EdgeInsets.all(16),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.68,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                      ),
+                      itemCount: _filteredProducts.length,
+                      itemBuilder: (context, index) {
+                        return ProductCard(
+                          items: _filteredProducts[index],
+                          onTap: () => _navigateToProductDetail(
+                            _filteredProducts[index],
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
