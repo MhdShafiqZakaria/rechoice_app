@@ -177,10 +177,38 @@ class ItemService {
     try {
       await _itemsCollection.doc(itemId).update({
         'quantity': newQuantity,
-        'status': newQuantity > 0 ? 'available' : 'sold out',
+        'status': newQuantity > 0 ? 'available' : 'sold',
       });
     } catch (e) {
       throw Exception('Failed to update quantity: $e');
+    }
+  }
+
+  // Update quantity by itemID field (not document ID)
+  Future<void> updateQuantityByItemID(int itemID, int newQuantity) async {
+    try {
+      // Query to find the document with matching itemID
+      final snapshot = await _itemsCollection
+          .where('itemID', isEqualTo: itemID)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        throw Exception('Item with ID $itemID not found');
+      }
+
+      // Update the found document
+      final docId = snapshot.docs.first.id;
+      print('DEBUG: Found document ID $docId for itemID $itemID');
+      
+      await _itemsCollection.doc(docId).update({
+        'quantity': newQuantity,
+        'status': newQuantity > 0 ? 'available' : 'sold',
+      });
+      
+      print('DEBUG: Successfully updated quantity for itemID $itemID to $newQuantity');
+    } catch (e) {
+      throw Exception('Failed to update quantity for itemID $itemID: $e');
     }
   }
 
