@@ -26,6 +26,7 @@ import 'package:rechoice_app/pages/auth/register.dart';
 import 'package:rechoice_app/pages/auth/reset_password.dart';
 import 'package:rechoice_app/pages/main-dashboard/catalog.dart';
 import 'package:rechoice_app/pages/main-dashboard/dashboard.dart';
+import 'package:rechoice_app/pages/main-dashboard/in_app_chat.dart';
 import 'package:rechoice_app/pages/main-dashboard/product.dart';
 import 'package:rechoice_app/pages/main-dashboard/search_result.dart';
 import 'package:rechoice_app/pages/main-dashboard/wishlist.dart';
@@ -91,7 +92,7 @@ class MainApp extends StatelessWidget {
       title: 'ReChoice',
       debugShowCheckedModeBanner: false,
       //start the app from authGate page
-      initialRoute: '/',
+      initialRoute: '/chatbot',
 
       //routes for navigation between pages
       routes: {
@@ -122,6 +123,7 @@ class MainApp extends StatelessWidget {
         '/manageUser': (context) =>
             _AdminRouteGuard(child: const UserManagementPage()),
         '/chatbot': (context) => const Chatbot(),
+        '/inAppChat': (context) => const InAppChat(),
       },
     );
   }

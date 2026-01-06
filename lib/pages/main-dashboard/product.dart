@@ -307,13 +307,17 @@ class _ProductState extends State<Product> {
             Row(
               children: [
                 IconButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/chatbot');
+                  },
                   icon: const Icon(Icons.smart_toy),
                   iconSize: 28,
                   color: Colors.blue,
                 ),
                 IconButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushNamed(context,'/inAppChat');
+                  },
                   icon: const Icon(Icons.message),
                   iconSize: 28,
                   color: Colors.blue,
