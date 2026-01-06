@@ -241,6 +241,25 @@ class ItemsViewModel extends ChangeNotifier {
     }
   }
 
+  // Update quantity by itemID field (not document ID)
+  Future<bool> updateQuantityByItemID(int itemID, int newQuantity) async {
+    try {
+      print('DEBUG: ItemsViewModel - updateQuantityByItemID called for itemID: $itemID, newQuantity: $newQuantity');
+      await _itemService.updateQuantityByItemID(itemID, newQuantity);
+      
+      // Refresh the items lists to reflect the changes
+      await fetchAllItems();
+      await fetchApprovedItems();
+      
+      notifyListeners();
+      return true;
+    } catch (e) {
+      print('DEBUG: ItemsViewModel - updateQuantityByItemID error: $e');
+      _setError('Failed to update quantity: $e');
+      return false;
+    }
+  }
+
   // ==================== ENGAGEMENT OPERATIONS ====================
 
   Future<void> incrementViewCount(String itemId) async {
