@@ -118,11 +118,12 @@ class AIImageService {
   }
 
   /// Poll for results with retry logic
-  /// Polls up to 30 times with 1 second delay
+  /// Polls up to 60 times with 2 second delay (2 minutes total)
+  /// Google Vision API can take 5-15 seconds per image
   Future<AIRecognitionResult?> waitForResults(
     String imageId, {
-    int maxRetries = 30,
-    Duration retryDelay = const Duration(seconds: 1),
+    int maxRetries = 60,
+    Duration retryDelay = const Duration(seconds: 2),
   }) async {
     for (int i = 0; i < maxRetries; i++) {
       final result = await getResults(imageId);
