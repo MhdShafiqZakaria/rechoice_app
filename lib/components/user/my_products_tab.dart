@@ -26,6 +26,38 @@ class _MyProductsTabState extends State<MyProductsTab> {
     print('DEBUG: MyProductsTab initialized for user ID: ${widget.user.userID}');
   }
 
+  void _handleAddProductClick() async {
+    if (widget.user.isSeller) {
+      // Show add product dialog for sellers
+      final added = await showDialog<bool>(
+        context: context,
+        builder: (context) => AddProductDialog(userId: widget.user.userID),
+      );
+
+      if (added == true) {
+        await widget.itemsVM.fetchUserItems(widget.user.userID);
+        if (mounted) {
+          setState(() {});
+        }
+      }
+    } else if (widget.user.isBuyer) {
+      // Show contact admin dialog for buyers
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Become a Seller'),
+          content: const Text('Contact admin to become seller: adminrechoice@gmail.com'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Back'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.itemsVM.isLoading) {
@@ -49,21 +81,7 @@ class _MyProductsTabState extends State<MyProductsTab> {
             ),
 
             ElevatedButton.icon(
-              onPressed: () async {
-                final added = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AddProductDialog(userId: widget.user.userID),
-                );
-
-                if (added == true) {
-                  // Refresh the items list
-                  await widget.itemsVM.fetchUserItems(widget.user.userID);
-                  // Trigger rebuild to show products
-                  if (mounted) {
-                    setState(() {});
-                  }
-                }
-              },
+              onPressed: _handleAddProductClick,
               label: const Text('Add Product'),
               icon: const Icon(Icons.add_circle, color: Colors.white),
             ),
@@ -90,20 +108,7 @@ class _MyProductsTabState extends State<MyProductsTab> {
                 ),
                 
                 TextButton(
-                  onPressed: () async {
-                    final added = await showDialog<bool>(
-                      context: context,
-                      builder: (context) =>
-                          AddProductDialog(userId: widget.user.userID),
-                    );
-
-                    if (added == true) {
-                      await widget.itemsVM.fetchUserItems(widget.user.userID);
-                      if (mounted) {
-                        setState(() {});
-                      }
-                    }
-                  },
+                  onPressed: _handleAddProductClick,
                   child: const Text('Add Product', style: TextStyle(color: Colors.blue)),
                 ),
               ],
