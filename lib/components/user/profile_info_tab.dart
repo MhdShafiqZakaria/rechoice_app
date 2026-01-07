@@ -49,35 +49,7 @@ class ProfileInfoTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          SectionCard(
-            title: 'Activity Stats',
-            children: [
-              InfoRow(
-                label: 'Total Listings',
-                value: user.totalListings.toString(),
-                icon: null,
-              ),
-              const Divider(),
-              InfoRow(
-                label: 'Total Purchases',
-                value: user.totalPurchases.toString(),
-                icon: null,
-              ),
-              const Divider(),
-              InfoRow(
-                label: 'Total Sales',
-                value: user.totalSales.toString(),
-                icon: null,
-              ),
-              const Divider(),
-              InfoRow(
-                label: 'Reputation Score',
-                value: user.reputationScore.toStringAsFixed(1),
-                icon: null,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+
           if (isOwnProfile && user.hasContactInfo)
             SectionCard(
               title: 'Contact Information',

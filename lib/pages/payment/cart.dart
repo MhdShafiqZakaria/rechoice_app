@@ -1,6 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rechoice_app/components/cart/cart_card.dart';
+import 'package:rechoice_app/models/services/firestore_service.dart';
 import 'package:rechoice_app/models/viewmodels/cart_view_model.dart';
 
 class CartPage extends StatefulWidget {
@@ -17,6 +19,16 @@ class _CartPageState extends State<CartPage> {
     return Consumer<CartViewModel>(
       builder: (context, viewModel, child) {
         final product = viewModel.cartItems;
+
+        // Group cart items by seller
+        final Map<int, List<dynamic>> itemsBySeller = {};
+        for (var item in product) {
+          final sellerId = item.items.sellerID;
+          if (!itemsBySeller.containsKey(sellerId)) {
+            itemsBySeller[sellerId] = [];
+          }
+          itemsBySeller[sellerId]!.add(item);
+        }
         return Scaffold(
           backgroundColor: Colors.grey[50],
           body: Column(
@@ -88,22 +100,40 @@ class _CartPageState extends State<CartPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Delivery Address Card
-                              _buildAddressCard(),
-                              const SizedBox(height: 20),
+                              // Group items by seller
+                              ...itemsBySeller.entries.map((entry) {
+                                final sellerId = entry.key;
+                                final sellerItems = entry.value;
 
-                              // Cart Items
-                              ListView.separated(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                separatorBuilder: (context, index) =>
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Seller Address Card
+                                    _buildSellerAddressCard(
+                                      context,
+                                      sellerId,
+                                      FirestoreService(),
+                                    ),
                                     const SizedBox(height: 12),
-                                itemBuilder: (context, index) {
-                                  return CartCard(cartItems: product[index]);
-                                },
-                                itemCount: product.length,
-                              ),
-                              const SizedBox(height: 24),
+
+                                    // Items from this seller
+                                    ListView.separated(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      separatorBuilder: (context, index) =>
+                                          const SizedBox(height: 12),
+                                      itemBuilder: (context, index) {
+                                        return CartCard(
+                                          cartItems: sellerItems[index],
+                                        );
+                                      },
+                                      itemCount: sellerItems.length,
+                                    ),
+                                    const SizedBox(height: 24),
+                                  ],
+                                );
+                              }).toList(),
 
                               // Order Summary Card
                               _buildOrderSummary(viewModel.grandTotalPrice),
@@ -143,55 +173,131 @@ Widget _buildEmptyCart() {
   );
 }
 
-// Address Card widget
-Widget _buildAddressCard() {
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.grey.shade50,
-          spreadRadius: 2,
-          blurRadius: 6,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.location_on, color: Colors.blue, size: 24),
-            const SizedBox(width: 8),
-            const Text(
-              'John Doe',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(width: 16),
-            Text(
-              '(+60)1234567890',
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+// Seller Address Card widget
+Widget _buildSellerAddressCard(
+  BuildContext context,
+  int sellerId,
+  FirestoreService firestoreService,
+) {
+  return FutureBuilder<QuerySnapshot>(
+    future: firestoreService.firestoreInstance
+        .collection('users')
+        .where('userID', isEqualTo: sellerId)
+        .limit(1)
+        .get(),
+    builder: (context, snapshot) {
+      // Extract seller data
+      final sellerData = snapshot.hasData && snapshot.data!.docs.isNotEmpty
+          ? snapshot.data!.docs.first.data() as Map<String, dynamic>
+          : null;
+
+      final sellerName = sellerData?['name'] as String? ?? 'Unknown Seller';
+      final phoneNumber = sellerData?['phoneNumber'] as String?;
+      final address = sellerData?['address'] as String?;
+      final isLoading = snapshot.connectionState == ConnectionState.waiting;
+
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade50,
+              spreadRadius: 2,
+              blurRadius: 6,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.only(left: 32),
-          child: Text(
-            'Allamanda College,Universiti Malaysia Sarawak 94300,Kota Samarahan,Sarawak',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[700],
-              height: 1.4,
-            ),
-          ),
-        ),
-      ],
-    ),
+        child: isLoading
+            ? Row(
+                children: [
+                  const Icon(Icons.store, color: Colors.blue, size: 24),
+                  const SizedBox(width: 12),
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.store, color: Colors.blue, size: 24),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Pickup from Seller',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          sellerName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (phoneNumber != null && phoneNumber.isNotEmpty) ...[
+                        const SizedBox(width: 16),
+                        Text(
+                          phoneNumber,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: address != null
+                            ? Colors.grey[600]
+                            : Colors.grey[400],
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          address ?? 'No pickup address provided',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: address != null
+                                ? Colors.grey[700]
+                                : Colors.grey[500],
+                            fontStyle: address != null
+                                ? FontStyle.normal
+                                : FontStyle.italic,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+      );
+    },
   );
 }
 

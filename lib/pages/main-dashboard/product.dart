@@ -172,40 +172,6 @@ class _ProductState extends State<Product> {
               ),
               const SizedBox(height: 16),
 
-              //Option
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Color',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-
-              //Option buttons
-              const SizedBox(height: 16),
-              // Row dengan 3 container
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: colorOptions
-                    .map(
-                      (color) => _ColorOption(
-                        color: color,
-                        isSelected: selectedColor == color,
-                        onTap: () {
-                          setState(() {
-                            selectedColor = color;
-                          });
-                        },
-                      ),
-                    )
-                    .toList(),
-              ),
-              const SizedBox(height: 16),
-
               //Quantity
               Row(
                 children: [
@@ -388,36 +354,4 @@ class _ProductState extends State<Product> {
   }
 }
 
-class _ColorOption extends StatelessWidget {
-  final Color color;
-  final bool isSelected;
-  final VoidCallback onTap;
 
-  const _ColorOption({
-    required this.color,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: isSelected ? Colors.blue : Colors.transparent,
-            width: 3,
-          ),
-        ),
-        child: isSelected
-            ? const Icon(Icons.check, color: Colors.white, size: 24)
-            : null,
-      ),
-    );
-  }
-}

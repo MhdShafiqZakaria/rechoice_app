@@ -257,14 +257,7 @@ class _DashboardState extends State<Dashboard> {
 
                     //Logo
                     child: Center(
-                      child: Text(
-                        '2ND',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade700,
-                        ),
-                      ),
+                      child: Image.asset('assets/images/logo.png'),
                     ),
                   ),
                   SizedBox(width: 12),

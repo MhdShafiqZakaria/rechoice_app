@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:rechoice_app/components/payment/payment_card.dart';
 import 'package:rechoice_app/models/viewmodels/cart_view_model.dart';
 import 'package:rechoice_app/models/viewmodels/items_view_model.dart';
+import 'package:rechoice_app/pages/payment/write_review_page.dart';
 
 class PaymentPage extends StatefulWidget {
   const PaymentPage({super.key});
@@ -310,8 +311,17 @@ class _PaymentPageState extends State<PaymentPage> {
                                 width: double.infinity,
                                 child: ElevatedButton(
                                   onPressed: () {
-                                    print('Rate This Seller pressed');
-                                  },
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => WriteReviewPage(
+                                          sellerId: 'seller_001',
+                                          sellerName: 'Syafiq',
+                                          sellerInitials: 'SC',
+                                          orderId: 'ORD-2026-001',
+                                        ),
+                                      ),
+                                    );                                  },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.blue,
                                     padding: const EdgeInsets.symmetric(

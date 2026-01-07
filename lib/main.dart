@@ -33,10 +33,7 @@ import 'package:rechoice_app/pages/main-dashboard/search_result.dart';
 import 'package:rechoice_app/pages/main-dashboard/wishlist.dart';
 import 'package:rechoice_app/pages/payment/cart.dart';
 import 'package:rechoice_app/pages/payment/payment.dart';
-import 'package:rechoice_app/pages/users/add_new_products.dart';
-import 'package:rechoice_app/pages/users/add_products.dart';
 import 'package:rechoice_app/pages/users/user_profile.dart';
-import 'package:rechoice_app/pages/users/user_profile_info.dart';
 import 'package:rechoice_app/pages/users/user_reviews.dart';
 import 'package:rechoice_app/utils/navigation.dart';
 import 'firebase_options.dart';
@@ -45,7 +42,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-    // Force logout in debug mode to ensure clean state on each dev run
+  // Force logout in debug mode to ensure clean state on each dev run
   if (kDebugMode) {
     await FirebaseAuth.instance.signOut();
   }
@@ -114,10 +111,7 @@ class MainApp extends StatelessWidget {
         '/cart': (context) => const CartPage(),
         '/payment': (context) => const PaymentPage(),
         '/wishlist': (context) => const WishlistPage(),
-        '/profile': (context) => const UserProfilePage(),
         '/profile2': (context) => const UserProfile(),
-        '/addProd': (context) => const MyProductsPage(),
-        '/addNewProd': (context) => const AddProductPage(),
         '/review': (context) => const UserReviewsPage(),
         '/adminDashboard': (context) =>
             _AdminRouteGuard(child: const AdminDashboardPage()),
