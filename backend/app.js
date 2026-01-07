@@ -22,9 +22,9 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: '*', // Accept all origins for development
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
+  credentials: false
 }));
 
 app.use(express.json());

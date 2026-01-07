@@ -51,7 +51,21 @@ function createImageRoutes(imageService) {
    * Response:
    *   - 202 Accepted with imageId
    */
-  router.post('/images/upload', upload.single('image'), uploadImage);
+  router.post('/images/upload', (req, res, next) => {
+    console.log('📨 POST /api/images/upload received');
+    console.log('Content-Type:', req.headers['content-type']);
+    upload.single('image')(req, res, (err) => {
+      if (err) {
+        console.error('❌ Multer error:', err.message);
+        return res.status(400).json({
+          success: false,
+          error: 'File upload error: ' + err.message
+        });
+      }
+      console.log('📂 File received by multer:', req.file ? req.file.originalname : 'None');
+      uploadImage(req, res, next);
+    });
+  });
 
   /**
    * GET /api/images/:imageId/results

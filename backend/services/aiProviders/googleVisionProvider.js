@@ -10,15 +10,19 @@ class GoogleVisionProvider extends AIProvider {
   constructor(credentialsPath) {
     super();
     
+    console.log('Google Vision Provider init...');
+    console.log('Credentials path:', credentialsPath);
+    
     if (credentialsPath) {
       process.env.GOOGLE_APPLICATION_CREDENTIALS = credentialsPath;
     }
 
     try {
       this.client = new vision.ImageAnnotatorClient();
-      console.log('✓ Google Vision client initialized');
+      console.log('✓ Google Vision client initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize Google Vision:', error.message);
+      console.error('❌ Failed to initialize Google Vision:', error.message);
+      console.error('Make sure GOOGLE_APPLICATION_CREDENTIALS is set correctly');
       throw error;
     }
   }

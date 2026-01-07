@@ -14,8 +14,14 @@ class ImageController {
    * Upload image and start AI recognition
    */
   async uploadImage(req, res, next) {
+    console.log('\n===== IMAGE UPLOAD REQUEST =====');
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
+    console.log('File:', req.file ? `${req.file.originalname} (${req.file.size} bytes)` : 'NO FILE');
+    
     try {
       if (!req.file) {
+        console.log('❌ No file provided');
         return res.status(400).json({
           success: false,
           error: 'No image file provided'
@@ -23,21 +29,28 @@ class ImageController {
       }
 
       const userId = req.user?.id || req.body.userId || req.query.userId;
+      console.log('User ID:', userId);
+      
       if (!userId) {
+        console.log('❌ No userId provided');
         return res.status(401).json({
           success: false,
           error: 'User ID required'
         });
       }
 
+      console.log('📤 Processing upload for user:', userId);
       const result = await this.imageService.uploadImage(req.file, userId);
 
+      console.log('✓ Upload successful:', result.imageId);
       // 202 Accepted - request accepted but still processing
       res.status(202).json({
         success: true,
         ...result
       });
     } catch (error) {
+      console.error('❌ Upload error:', error.message);
+      console.error('Stack:', error.stack);
       res.status(400).json({
         success: false,
         error: error.message

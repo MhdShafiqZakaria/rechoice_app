@@ -20,38 +20,69 @@ class AIImageService {
   Future<String?> uploadImage(File imageFile) async {
     try {
       print('📤 Uploading image: ${imageFile.path}');
+      print('📤 Image size: ${imageFile.lengthSync()} bytes');
+      print('📤 Backend URL: $baseUrl/images/upload');
 
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('$baseUrl/images/upload'),
       );
 
-      // Add image file
+      // Determine MIME type based on file extension
+      String getMimeType(String filePath) {
+        if (filePath.toLowerCase().endsWith('.png')) {
+          return 'image/png';
+        } else if (filePath.toLowerCase().endsWith('.webp')) {
+          return 'image/webp';
+        } else {
+          return 'image/jpeg'; // default to JPEG
+        }
+      }
+
+      final mimeType = getMimeType(imageFile.path);
+      print('📤 Image MIME type: $mimeType');
+
+      // Add image file with explicit MIME type
       request.files.add(
         await http.MultipartFile.fromPath(
           'image',
           imageFile.path,
+          contentType: http.MediaType.parse(mimeType),
         ),
       );
 
       // Add userId
       request.fields['userId'] = userId;
+      
+      print('📤 Sending request to backend...');
 
-      // Send request
-      var response = await request.send();
+      // Send request with timeout
+      var response = await request.send().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          print('❌ Request timeout after 30 seconds');
+          throw Exception('Upload timeout');
+        },
+      );
+
+      print('📤 Response status: ${response.statusCode}');
+      final responseBody = await response.stream.bytesToString();
+      print('📤 Response body: $responseBody');
 
       if (response.statusCode == 202) {
         // 202 = Accepted (processing started)
-        final responseData = jsonDecode(await response.stream.bytesToString());
+        final responseData = jsonDecode(responseBody);
         final imageId = responseData['imageId'];
         print('✓ Image uploaded: $imageId');
         return imageId;
       } else {
-        print('✗ Upload failed: ${response.statusCode}');
+        print('✗ Upload failed with status: ${response.statusCode}');
+        print('✗ Response: $responseBody');
         return null;
       }
     } catch (e) {
       print('✗ Upload error: $e');
+      print('✗ Stack trace: ${StackTrace.current}');
       return null;
     }
   }
@@ -151,7 +182,7 @@ class AIImageService {
 class AIRecognitionResult {
   final List<Label> labels;
   final List<ObjectDetection> objects;
-  final List<Color> colors;
+  final List<DominantColor> colors;
   final int faces;
   final String text;
   final List<WebEntity> webEntities;
@@ -178,7 +209,7 @@ class AIRecognitionResult {
               .toList() ??
           [],
       colors: (json['colors'] as List?)
-              ?.map((c) => Color.fromJson(c))
+              ?.map((c) => DominantColor.fromJson(c))
               .toList() ??
           [],
       faces: json['faces'] ?? 0,
@@ -231,18 +262,18 @@ class ObjectDetection {
   }
 }
 
-/// Model for colors
-class Color {
+/// Model for dominant colors
+class DominantColor {
   final String hex;
   final int pixelFraction;
 
-  Color({
+  DominantColor({
     required this.hex,
     required this.pixelFraction,
   });
 
-  factory Color.fromJson(Map<String, dynamic> json) {
-    return Color(
+  factory DominantColor.fromJson(Map<String, dynamic> json) {
+    return DominantColor(
       hex: json['hex'] ?? '#000000',
       pixelFraction: json['pixelFraction'] ?? 0,
     );
