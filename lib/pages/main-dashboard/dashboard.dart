@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rechoice_app/components/dashboard/category_btn.dart';
 import 'package:rechoice_app/components/dashboard/product_card.dart';
+import 'package:rechoice_app/components/ai_recognition_fab.dart';
 import 'package:rechoice_app/models/model/category_model.dart';
 import 'package:rechoice_app/models/model/items_model.dart';
 import 'package:rechoice_app/models/services/authenticate.dart';
@@ -224,6 +225,12 @@ class _DashboardState extends State<Dashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => AIRecognitionFAB.openRecognition(context),
+        backgroundColor: Colors.blue,
+        tooltip: 'AI Image Recognition',
+        child: const Icon(Icons.image_search, color: Colors.white),
+      ),
       body: SafeArea(
         child: Column(
           children: [
