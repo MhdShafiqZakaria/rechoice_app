@@ -14,7 +14,7 @@ class ListingModerationService {
 
       // Only filter by status if provided
       if (statusFilter != null && statusFilter.isNotEmpty) {
-        query = query.where('status', isEqualTo: statusFilter);
+        query = query.where('moderationStatus', isEqualTo: statusFilter);
       }
 
       // Removed orderBy to avoid Firestore index requirement
@@ -22,25 +22,26 @@ class ListingModerationService {
 
       final snapshot = await query.get();
       var listings = snapshot.docs
-          .map((doc) => {
-                'id': doc.id,
-                ...doc.data() as Map<String, dynamic>,
-              })
+          .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
           .toList();
 
       // Sort by createdAt in memory (descending)
       listings.sort((a, b) {
         final aCreated = a['createdAt'];
         final bCreated = b['createdAt'];
-        
+
         if (aCreated == null && bCreated == null) return 0;
         if (aCreated == null) return 1;
         if (bCreated == null) return -1;
-        
+
         // Handle both Timestamp and DateTime
-        final aTime = aCreated is Timestamp ? aCreated.toDate() : (aCreated as DateTime?);
-        final bTime = bCreated is Timestamp ? bCreated.toDate() : (bCreated as DateTime?);
-        
+        final aTime = aCreated is Timestamp
+            ? aCreated.toDate()
+            : (aCreated as DateTime?);
+        final bTime = bCreated is Timestamp
+            ? bCreated.toDate()
+            : (bCreated as DateTime?);
+
         if (aTime == null || bTime == null) return 0;
         return bTime.compareTo(aTime); // descending
       });
@@ -82,7 +83,9 @@ class ListingModerationService {
         'price': 89.99,
         'status': 'pending',
         'sellerName': 'Jane Smith',
-        'createdAt': Timestamp.fromDate(DateTime.now().subtract(const Duration(days: 2))),
+        'createdAt': Timestamp.fromDate(
+          DateTime.now().subtract(const Duration(days: 2)),
+        ),
         'views': 120,
         'description': 'New winter jacket, size M, never worn',
       },
@@ -93,7 +96,9 @@ class ListingModerationService {
         'price': 149.99,
         'status': 'pending',
         'sellerName': 'Mike Johnson',
-        'createdAt': Timestamp.fromDate(DateTime.now().subtract(const Duration(days: 5))),
+        'createdAt': Timestamp.fromDate(
+          DateTime.now().subtract(const Duration(days: 5)),
+        ),
         'views': 45,
         'description': 'Wooden coffee table in good condition, solid oak',
       },
@@ -117,9 +122,12 @@ class ListingModerationService {
       final queryLower = query.toLowerCase();
       final filtered = listings.where((listing) {
         final title = (listing['title'] ?? '').toString().toLowerCase();
-        final description =
-            (listing['description'] ?? '').toString().toLowerCase();
-        final sellerName = (listing['sellerName'] ?? '').toString().toLowerCase();
+        final description = (listing['description'] ?? '')
+            .toString()
+            .toLowerCase();
+        final sellerName = (listing['sellerName'] ?? '')
+            .toString()
+            .toLowerCase();
 
         return title.contains(queryLower) ||
             description.contains(queryLower) ||
@@ -143,10 +151,10 @@ class ListingModerationService {
 
       // Update listing status
       await _firestore.collection('items').doc(itemId).update({
-        'status': 'approved',
         'moderationStatus': 'approved',
         'updatedAt': FieldValue.serverTimestamp(),
         'moderatedBy': 'admin_user',
+        'moderatedDate': FieldValue.serverTimestamp(),
       });
 
       // Send notification to seller
@@ -182,8 +190,10 @@ class ListingModerationService {
       await _firestore.collection('items').doc(itemId).update({
         'status': 'rejected',
         'moderationStatus': 'rejected',
+        'moderatedBy': 'admin_user',
         'updatedAt': FieldValue.serverTimestamp(),
-        'rejectionReason': reason ?? '',
+        'rejectionReason': reason ?? 'Does not meet our guidelines',
+        'moderatedDate': FieldValue.serverTimestamp(),
       });
 
       // Send notification to seller

@@ -4,7 +4,11 @@ import 'package:rechoice_app/components/dashboard/product_card.dart';
 import 'package:rechoice_app/models/model/category_model.dart';
 import 'package:rechoice_app/models/model/items_model.dart';
 import 'package:rechoice_app/models/services/authenticate.dart';
-import 'package:rechoice_app/models/services/dummy_data.dart';
+import 'package:rechoice_app/models/services/category_service.dart';
+import 'package:rechoice_app/models/services/firestore_service.dart';
+import 'package:rechoice_app/models/services/item_service.dart';
+import 'package:rechoice_app/models/services/listing_service.dart';
+import 'package:rechoice_app/models/services/local_storage_service.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -19,18 +23,61 @@ class _DashboardState extends State<Dashboard> {
   List<Items> _allProducts = [];
   List<Items> _filteredProducts = [];
   List<ItemCategoryModel> _categories = [];
+  bool _isLoading = true;
+  String? _loadError;
+
+  late ListingService _listingService;
+  late CategoryService _categoryService;
 
   @override
   void initState() {
-    _loadData();
     super.initState();
+    _initializeServices();
+    _loadData();
   }
 
-  void _loadData() {
-    // Load dummy data (will be replaced with Firebase later)
-    _categories = DummyData.getCategories();
-    _allProducts = DummyData.getFeaturedProducts();
-    _filteredProducts = _allProducts;
+  void _initializeServices() {
+    final firestoreService = FirestoreService();
+    final itemService = ItemService(FirestoreService(), LocalStorageService());
+    _listingService = ListingService(firestoreService, itemService);
+    _categoryService = CategoryService(firestoreService);
+  }
+
+  Future<void> _loadData() async {
+    try {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = true;
+        _loadError = null;
+      });
+
+      // Fetch categories from Firebase
+      _categories = await _categoryService.getAllCategories();
+      print('DEBUG: Loaded ${_categories.length} categories');
+
+      // Fetch all listings from Firebase (using getAllListings for debugging)
+      // Note: Replace with getApprovedListings() once your items have proper moderation status
+      final listings = await _listingService.getApprovedListings();
+      _allProducts = listings.map((listing) => listing.item).toList();
+      _filteredProducts = _allProducts;
+
+      print('DEBUG: Loaded ${_allProducts.length} products');
+      if (_allProducts.isNotEmpty) {
+        print('DEBUG: First product: ${_allProducts[0].title}');
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _loadError = 'Failed to load data: ${e.toString()}';
+      });
+      print('Error loading data: $e');
+    }
   }
 
   void _filterByCategory(int? categoryId) {
@@ -83,7 +130,6 @@ class _DashboardState extends State<Dashboard> {
 
   void _navigateToProductDetail(Items item) {
     Navigator.pushNamed(context, '/product', arguments: item);
-
   }
 
   void _showProfileMenu() {
@@ -211,14 +257,7 @@ class _DashboardState extends State<Dashboard> {
 
                     //Logo
                     child: Center(
-                      child: Text(
-                        '2ND',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade700,
-                        ),
-                      ),
+                      child: Image.asset('assets/images/logo.png'),
                     ),
                   ),
                   SizedBox(width: 12),
@@ -366,7 +405,59 @@ class _DashboardState extends State<Dashboard> {
 
             // ================== Featured Products Grid ==================
             Expanded(
-              child: _filteredProducts.isEmpty
+              child: _isLoading
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(
+                            color: Colors.blue.shade700,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'Loading products...',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _loadError != null
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.red.shade400,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            _loadError!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.red.shade600,
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadData,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue.shade700,
+                            ),
+                            child: Text(
+                              'Retry',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _filteredProducts.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,

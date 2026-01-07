@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:rechoice_app/components/payment/payment_card.dart';
 import 'package:rechoice_app/models/viewmodels/cart_view_model.dart';
+import 'package:rechoice_app/models/viewmodels/items_view_model.dart';
+import 'package:rechoice_app/pages/payment/write_review_page.dart';
 
 class PaymentPage extends StatefulWidget {
   const PaymentPage({super.key});
@@ -243,7 +245,7 @@ class _PaymentPageState extends State<PaymentPage> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.grey.withOpacity(0.1),
+                                color: Colors.grey,
                                 spreadRadius: 2,
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
@@ -273,7 +275,7 @@ class _PaymentPageState extends State<PaymentPage> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       const Text(
-                                        'Syafiq',
+                                        'Shafiq',
                                         style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
@@ -309,8 +311,17 @@ class _PaymentPageState extends State<PaymentPage> {
                                 width: double.infinity,
                                 child: ElevatedButton(
                                   onPressed: () {
-                                    print('Rate This Seller pressed');
-                                  },
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => WriteReviewPage(
+                                          sellerId: 'seller_001',
+                                          sellerName: 'Syafiq',
+                                          sellerInitials: 'SC',
+                                          orderId: 'ORD-2026-001',
+                                        ),
+                                      ),
+                                    );                                  },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.blue,
                                     padding: const EdgeInsets.symmetric(
@@ -322,6 +333,33 @@ class _PaymentPageState extends State<PaymentPage> {
                                   ),
                                   child: const Text(
                                     'Rate This Seller',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              // Complete Purchase Button
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    _showCompletePurchaseDialog(context);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Complete Purchase',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
@@ -346,6 +384,111 @@ class _PaymentPageState extends State<PaymentPage> {
     );
 
     // ignore: dead_code
+  }
+
+  void _showCompletePurchaseDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: const Text(
+            'Purchase Completed',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.green,
+            ),
+          ),
+          content: const Text(
+            'Thanks for purchasing!',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.black87,
+            ),
+          ),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  try {
+                    // Get the cart and items view models
+                    final cartVM = context.read<CartViewModel>();
+                    final itemsVM = context.read<ItemsViewModel>();
+                    
+                    // Create a copy of cart items before clearing
+                    final cartItemsCopy = List.from(cartVM.cartItems);
+                    
+                    // Update quantities for each item in the cart
+                    for (var cartItem in cartItemsCopy) {
+                      final itemID = cartItem.items.itemID; // Use itemID as int
+                      final currentQuantity = cartItem.items.quantity;
+                      final purchasedQuantity = cartItem.quantity;
+                      final newQuantity = currentQuantity - purchasedQuantity;
+                      
+                      print('DEBUG: Updating item $itemID - Current: $currentQuantity, Purchased: $purchasedQuantity, New: $newQuantity');
+                      
+                      // Update the item quantity in the database using itemID
+                      final success = await itemsVM.updateQuantityByItemID(itemID, newQuantity);
+                      
+                      if (!success) {
+                        print('DEBUG: Failed to update quantity for item $itemID');
+                      } else {
+                        print('DEBUG: Successfully updated quantity for item $itemID');
+
+                      }
+                    }
+                    
+                    // Clear the cart after purchase
+                    await cartVM.clearCart();
+                    print('DEBUG: Cart cleared successfully');
+                    
+                    // Close dialog and navigate to dashboard
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/dashboard',
+                        (route) => false,
+                      );
+                    }
+                  } catch (e) {
+                    print('DEBUG: Error during purchase completion: $e');
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error completing purchase: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Go to Dashboard',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildTotalSummary(double grandTotal) {

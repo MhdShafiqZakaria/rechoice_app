@@ -22,27 +22,29 @@ class SearchResult extends StatefulWidget {
 
 class _SearchResultState extends State<SearchResult> {
   late List<Items> _displayedResults;
-  String _sortBy = 'default'; // default, price_low, price_high, name
+  late List<Items> _originalResults;
+  String _sortBy = 'default';
+  bool _initialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    final args = ModalRoute.of(context)?.settings.arguments;
-
-    if (args is SearchArguments) {
-      _displayedResults = List.from(args.searchResults);
-    } else if (args is List<Items>) {
-      _displayedResults = List.from(args);
-    } else {
-      _displayedResults = List.from(widget.searchResults);
+    // Only initialize once
+    if (!_initialized) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is SearchArguments) {
+        _originalResults = List.from(args.searchResults);
+        _displayedResults = List.from(args.searchResults);
+      } else if (args is List<Items>) {
+        _originalResults = List.from(args);
+        _displayedResults = List.from(args);
+      } else {
+        _originalResults = List.from(widget.searchResults);
+        _displayedResults = List.from(widget.searchResults);
+      }
+      _initialized = true;
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _displayedResults = List.from(widget.searchResults);
   }
 
   void _sortResults(String sortType) {
@@ -58,8 +60,9 @@ class _SearchResultState extends State<SearchResult> {
         case 'name':
           _displayedResults.sort((a, b) => a.title.compareTo(b.title));
           break;
-        default:
-          _displayedResults = List.from(widget.searchResults);
+        case 'default':
+          _displayedResults = List.from(_originalResults);
+          break;
       }
     });
   }
@@ -108,25 +111,25 @@ class _SearchResultState extends State<SearchResult> {
 
   void _navigateToProductDetail(Items item) {
     Navigator.pushNamed(context, '/product', arguments: item);
-
-    // ScaffoldMessenger.of(context).showSnackBar(
-    //   SnackBar(
-    //     content: Text('Opening ${item.title}...'),
-    //     duration: const Duration(seconds: 1),
-    //   ),
-    // );
   }
 
   @override
   Widget build(BuildContext context) {
+    // Show loading until initialized
+    if (!_initialized) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
-      //AppBar
       appBar: AppBar(
         backgroundColor: Colors.blue.shade700,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           iconSize: 20,
           padding: EdgeInsets.zero,
           onPressed: () {
@@ -135,7 +138,7 @@ class _SearchResultState extends State<SearchResult> {
         ),
         title: Text(
           widget.searchQuery != null
-              ? 'Searched Result'
+              ? 'Search Results'
               : widget.categoryName ?? 'Products',
           style: TextStyle(
             color: Colors.white,
@@ -150,11 +153,8 @@ class _SearchResultState extends State<SearchResult> {
           ),
         ],
       ),
-
-      //Body
       body: Column(
         children: [
-          // Search query info banner (if search was performed)
           if (widget.searchQuery != null && widget.searchQuery!.isNotEmpty)
             Container(
               width: double.infinity,
@@ -169,7 +169,6 @@ class _SearchResultState extends State<SearchResult> {
                 ),
               ),
             ),
-          //Result Count
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -201,7 +200,6 @@ class _SearchResultState extends State<SearchResult> {
               ],
             ),
           ),
-          // Product Grid
           Expanded(
             child: _displayedResults.isEmpty
                 ? Center(
@@ -213,7 +211,6 @@ class _SearchResultState extends State<SearchResult> {
                           size: 80,
                           color: Colors.grey.shade300,
                         ),
-
                         SizedBox(height: 16),
                         Text(
                           'No products found',
@@ -257,19 +254,4 @@ class _SearchResultState extends State<SearchResult> {
       ),
     );
   }
-
-  // Color _getConditionColor(String condition) {
-  //   switch (condition.toLowerCase()) {
-  //     case 'like new':
-  //       return Colors.green.shade600;
-  //     case 'excellent':
-  //       return Colors.blue.shade600;
-  //     case 'good':
-  //       return Colors.orange.shade600;
-  //     case 'fair':
-  //       return Colors.amber.shade700;
-  //     default:
-  //       return Colors.grey.shade600;
-  //   }
-  // }
 }

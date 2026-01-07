@@ -165,27 +165,6 @@ class Users {
       address: address ?? this.address,
     );
   }
-
-  // Add helper methods for safe enum parsing
-  static UserStatus _parseUserStatus(dynamic status) {
-    if (status == null) return UserStatus.active;
-    try {
-      return UserStatus.values.byName(status.toString());
-    } catch (e) {
-      print('Invalid UserStatus: $status, defaulting to active');
-      return UserStatus.active;
-    }
-  }
-
-  static UserRole _parseUserRole(dynamic role) {
-    if (role == null) return UserRole.buyer;
-    try {
-      return UserRole.values.byName(role.toString());
-    } catch (e) {
-      print('Invalid UserRole: $role, defaulting to buyer');
-      return UserRole.buyer;
-    }
-  }
 }
 
 enum UserRole { buyer, seller, admin }

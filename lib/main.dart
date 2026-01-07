@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -18,7 +20,6 @@ import 'package:rechoice_app/pages/admin/report_analytics.dart';
 import 'package:rechoice_app/pages/admin/user_management.dart';
 import 'package:rechoice_app/pages/ai-features/chatbot.dart';
 import 'package:rechoice_app/pages/auth/auth_gate.dart';
-import 'package:rechoice_app/pages/auth/change_password.dart';
 import 'package:rechoice_app/pages/auth/loading_page.dart';
 import 'package:rechoice_app/pages/auth/login_admin.dart';
 import 'package:rechoice_app/pages/auth/login_page.dart';
@@ -26,15 +27,13 @@ import 'package:rechoice_app/pages/auth/register.dart';
 import 'package:rechoice_app/pages/auth/reset_password.dart';
 import 'package:rechoice_app/pages/main-dashboard/catalog.dart';
 import 'package:rechoice_app/pages/main-dashboard/dashboard.dart';
+import 'package:rechoice_app/pages/main-dashboard/in_app_chat.dart';
 import 'package:rechoice_app/pages/main-dashboard/product.dart';
 import 'package:rechoice_app/pages/main-dashboard/search_result.dart';
 import 'package:rechoice_app/pages/main-dashboard/wishlist.dart';
 import 'package:rechoice_app/pages/payment/cart.dart';
 import 'package:rechoice_app/pages/payment/payment.dart';
-import 'package:rechoice_app/pages/users/add_new_products.dart';
-import 'package:rechoice_app/pages/users/add_products.dart';
 import 'package:rechoice_app/pages/users/user_profile.dart';
-import 'package:rechoice_app/pages/users/user_profile_info.dart';
 import 'package:rechoice_app/pages/users/user_reviews.dart';
 import 'package:rechoice_app/utils/navigation.dart';
 import 'firebase_options.dart';
@@ -42,6 +41,11 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Force logout in debug mode to ensure clean state on each dev run
+  if (kDebugMode) {
+    await FirebaseAuth.instance.signOut();
+  }
 
   final loadStorageService = LocalStorageService();
   await loadStorageService.init();
@@ -100,7 +104,6 @@ class MainApp extends StatelessWidget {
         '/register': (context) => Register(),
         '/admin': (context) => const AdminLoginPage(),
         '/resetPW': (context) => const ResetPassword(),
-        '/changePW': (context) => const ChangePassword(),
         '/dashboard': (context) => const Dashboard(),
         '/catalog': (context) => const CatalogsPage(),
         '/search': (context) => SearchResult(searchResults: []),
@@ -108,10 +111,7 @@ class MainApp extends StatelessWidget {
         '/cart': (context) => const CartPage(),
         '/payment': (context) => const PaymentPage(),
         '/wishlist': (context) => const WishlistPage(),
-        '/profile': (context) => const UserProfilePage(),
         '/profile2': (context) => const UserProfile(),
-        '/addProd': (context) => const MyProductsPage(),
-        '/addNewProd': (context) => const AddProductPage(),
         '/review': (context) => const UserReviewsPage(),
         '/adminDashboard': (context) =>
             _AdminRouteGuard(child: const AdminDashboardPage()),
@@ -122,6 +122,7 @@ class MainApp extends StatelessWidget {
         '/manageUser': (context) =>
             _AdminRouteGuard(child: const UserManagementPage()),
         '/chatbot': (context) => const Chatbot(),
+        '/inAppChat': (context) => const InAppChat(),
       },
     );
   }
@@ -163,7 +164,7 @@ class _AdminRouteGuardState extends State<_AdminRouteGuard> {
       // Check if user is admin
       try {
         final isAdmin = await authService.isAdmin();
-        
+
         if (!mounted) return; // Widget was disposed during async operation
 
         if (isAdmin) {

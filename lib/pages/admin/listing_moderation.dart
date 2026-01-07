@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:rechoice_app/components/admin/admin_shared_widget.dart';
+import 'package:rechoice_app/models/services/firestore_service.dart';
+import 'package:rechoice_app/models/services/item_service.dart';
+import 'package:rechoice_app/models/services/listing_service.dart';
+import 'package:rechoice_app/models/services/local_storage_service.dart';
+import 'package:rechoice_app/models/services/unified_listing_service.dart';
 import 'package:rechoice_app/models/utils/export_utils.dart';
 import 'package:rechoice_app/models/services/listing_moderation_service.dart';
 
@@ -11,7 +16,7 @@ class ListingModerationPage extends StatefulWidget {
 }
 
 class _ListingModerationPageState extends State<ListingModerationPage> {
-  late ListingModerationService _service;
+  late UnifiedListingService _service;
   int selectedTabIndex = 2; // Listing Moderation tab selected
   String selectedStatus = 'All Status';
   String searchQuery = '';
@@ -20,7 +25,11 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
   @override
   void initState() {
     super.initState();
-    _service = ListingModerationService();
+    final firestoreService = FirestoreService();
+    final itemService = ItemService(firestoreService, LocalStorageService());
+    final listingService = ListingService(firestoreService, itemService);
+    final moderationService = ListingModerationService();
+    _service = UnifiedListingService(listingService, moderationService);
   }
 
   /// Fetch filtered listings from Firestore
@@ -34,20 +43,20 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
 
       // If search query is empty, just get by status
       if (searchQuery.isEmpty) {
-        return await _service.getListings(statusFilter: statusFilter);
+        return await _service.getModerationListings(statusFilter: statusFilter);
       }
 
       // Otherwise, search with status filter
-      return await _service.searchListings(
+      return await _service.searchModerationListings(
         searchQuery,
         statusFilter: statusFilter,
       );
     } catch (e) {
       print('❌ Error loading listings: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Error loading listings: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('❌ Error loading listings: $e')));
       }
       return [];
     }
@@ -92,9 +101,9 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
     } catch (e) {
       print('❌ Export error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Export failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('❌ Export failed: $e')));
       }
     } finally {
       if (mounted) {
@@ -106,7 +115,7 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
   Future<void> _approveListingAsync(String listingId) async {
     try {
       setState(() => _isLoading = true);
-      await _service.approveListingAsync(listingId);
+      await _service.approveListing(listingId);
       if (mounted) {
         setState(() {}); // Trigger rebuild to refresh list
         ScaffoldMessenger.of(context).showSnackBar(
@@ -118,9 +127,9 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Failed to approve: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('❌ Failed to approve: $e')));
       }
     } finally {
       if (mounted) {
@@ -132,7 +141,7 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
   Future<void> _rejectListingAsync(String listingId) async {
     try {
       setState(() => _isLoading = true);
-      await _service.rejectListingAsync(listingId);
+      await _service.rejectListing(listingId);
       if (mounted) {
         setState(() {}); // Trigger rebuild to refresh list
         ScaffoldMessenger.of(context).showSnackBar(
@@ -144,9 +153,9 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Failed to reject: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('❌ Failed to reject: $e')));
       }
     } finally {
       if (mounted) {
@@ -158,7 +167,10 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
   Future<void> _flagListingAsync(String listingId) async {
     try {
       setState(() => _isLoading = true);
-      await _service.flagListingAsync(listingId, reason: 'Flagged by moderator');
+      await _service.flagListing(
+        listingId,
+        reason: 'Flagged by moderator',
+      );
       if (mounted) {
         setState(() {}); // Trigger rebuild to refresh list
         ScaffoldMessenger.of(context).showSnackBar(
@@ -170,9 +182,9 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Failed to flag: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('❌ Failed to flag: $e')));
       }
     } finally {
       if (mounted) {
@@ -191,10 +203,22 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildDetailRow('Seller', _safeString(listing['sellerName'], 'Unknown')),
-              _buildDetailRow('Price', 'RM${_safeString(listing['price'], 'N/A')}'),
-              _buildDetailRow('Category', _safeString(listing['category'], 'N/A')),
-              _buildDetailRow('Status', _safeString(listing['status'], 'Unknown')),
+              _buildDetailRow(
+                'Seller',
+                _safeString(listing['sellerName'], 'Unknown'),
+              ),
+              _buildDetailRow(
+                'Price',
+                'RM${_safeString(listing['price'], 'N/A')}',
+              ),
+              _buildDetailRow(
+                'Category',
+                _safeString(listing['category'], 'N/A'),
+              ),
+              _buildDetailRow(
+                'Status',
+                _safeString(listing['status'], 'Unknown'),
+              ),
               _buildDetailRow('Views', _safeString(listing['views'], '0')),
               const SizedBox(height: 12),
               const Text(
@@ -280,14 +304,21 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: selectedStatus,
-                        items: ['All Status', 'Pending', 'Approved', 'Rejected', 'Flagged']
-                            .map(
-                              (status) => DropdownMenuItem(
-                                value: status,
-                                child: Text(status),
-                              ),
-                            )
-                            .toList(),
+                        items:
+                            [
+                                  'All Status',
+                                  'Pending',
+                                  'Approved',
+                                  'Rejected',
+                                  'Flagged',
+                                ]
+                                .map(
+                                  (status) => DropdownMenuItem(
+                                    value: status,
+                                    child: Text(status),
+                                  ),
+                                )
+                                .toList(),
                         onChanged: (value) {
                           if (value != null) {
                             setState(() {
@@ -329,9 +360,7 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
               builder: (context, snapshot) {
                 // Loading state
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 // Error state
@@ -391,8 +420,7 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
                         return _ListingRow(
                           listing: listing,
                           onView: () => _viewListing(listing),
-                          onApprove: () =>
-                              _approveListingAsync(listing['id']),
+                          onApprove: () => _approveListingAsync(listing['id']),
                           onReject: () => _rejectListingAsync(listing['id']),
                           onFlag: () => _flagListingAsync(listing['id']),
                         );
@@ -402,9 +430,7 @@ class _ListingModerationPageState extends State<ListingModerationPage> {
                     if (_isLoading)
                       Container(
                         color: Colors.black.withValues(alpha: 0.3),
-                        child: const Center(
-                          child: CircularProgressIndicator(),
-                        ),
+                        child: const Center(child: CircularProgressIndicator()),
                       ),
                   ],
                 );
@@ -434,7 +460,7 @@ class _ListingRow extends StatelessWidget {
   });
 
   Color _getStatusColor() {
-    final status = (listing['status'] ?? '').toString().toLowerCase();
+    final status = (listing['moderationStatus'] ?? '').toString().toLowerCase();
     switch (status) {
       case 'pending':
         return Colors.orange;
@@ -452,7 +478,9 @@ class _ListingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final price = listing['price'] ?? 0;
-    final priceStr = price is int ? 'RM$price' : 'RM${price.toStringAsFixed(2)}';
+    final priceStr = price is int
+        ? 'RM$price'
+        : 'RM${price.toStringAsFixed(2)}';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -512,7 +540,9 @@ class _ListingRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  (listing['status'] ?? 'unknown').toString().toUpperCase(),
+                  (listing['moderationStatus'] ?? 'pending')
+                      .toString()
+                      .toUpperCase(),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Colors.white,
@@ -529,11 +559,7 @@ class _ListingRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                _ActionLink(
-                  label: 'View',
-                  color: Colors.blue,
-                  onTap: onView,
-                ),
+                _ActionLink(label: 'View', color: Colors.blue, onTap: onView),
                 const SizedBox(height: 4),
                 _ActionLink(
                   label: 'Approve',

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:rechoice_app/components/auth/btn_google_sign_in.dart';
 import 'package:rechoice_app/components/auth/btn_sign_in.dart';
 import 'package:rechoice_app/components/auth/my_text_field.dart';
 import 'package:rechoice_app/models/viewmodels/auth_view_model.dart';
@@ -42,6 +41,15 @@ class _RegisterState extends State<Register> {
       return;
     }
 
+    if (passwordController.text.trim().length < 6) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Password must be at least 6 characters')),
+        );
+      }
+      return;
+    }
+
     final authVM = context.read<AuthViewModel>();
     try {
       await authVM.register(
@@ -58,8 +66,6 @@ class _RegisterState extends State<Register> {
       );
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -184,6 +190,7 @@ class _RegisterState extends State<Register> {
                                 hintText: 'Create a  strong password',
                                 obscureText: true,
                                 icon: Icons.lock,
+                                showVisibilityToggle: true,
                               ),
 
                               SizedBox(height: 30),

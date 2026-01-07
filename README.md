@@ -38,11 +38,7 @@ ReChoice is a standalone mobile application designed to provide UNIMAS students 
   - AI-powered chatbot for user guidance.
   - Provides user manuals and answers to frequently asked questions (FAQ).
   - Supports onboarding and feature usage.
-
-- **AI Image Recognition**
-  - Image-based item recognition using Artificial Intelligence.
-  - Helps users identify and search for similar items efficiently.
-
+  - 
 - **Admin Management**
   - Dedicated admin dashboard.
   - User, listing, and activity management.

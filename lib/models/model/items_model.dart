@@ -71,27 +71,36 @@ class Items {
       );
 
 
+      // Safe conversion helper for int fields
+      int? _toInt(dynamic value) {
+        if (value == null) return null;
+        if (value is int) return value;
+        if (value is String) return int.tryParse(value);
+        if (value is double) return value.toInt();
+        return null;
+      }
+
       final item = Items(
-        itemID: json['itemID'] as int? ?? 0,
+        itemID: _toInt(json['itemID']) ?? 0,
         title: json['title'] as String? ?? '',
         category: category,
         brand: json['brand'] as String? ?? '',
         condition: json['condition'] as String? ?? '',
         price: (json['price'] as num?)?.toDouble() ?? 0.0,
-        quantity: json['quantity'] as int? ?? 0,
+        quantity: _toInt(json['quantity']) ?? 0,
         description: json['description'] as String? ?? '',
         status: json['status'] as String? ?? 'available',
         imagePath: json['image'] as String? ?? '',
         moderationStatus: moderationStatus,
         postedDate: postedTs is Timestamp ? postedTs.toDate() : DateTime.now(),
-        sellerID: json['sellerID'] as int? ?? 0,
+        sellerID: _toInt(json['sellerID']) ?? 0,
         rejectionReason: json['rejectionReason'] as String?,
         moderatedDate: moderatedTs is Timestamp ? moderatedTs.toDate() : null,
-        moderatedBy: json['moderatedBy'] as int?,
+        moderatedBy: _toInt(json['moderatedBy']),
         sellerName: json['sellerName'] as String?,
         sellerRating: (json['sellerRating'] as num?)?.toDouble(),
-        viewCount: json['viewCount'] as int? ?? 0,
-        favoriteCount: json['favoriteCount'] as int? ?? 0,
+        viewCount: _toInt(json['viewCount']) ?? 0,
+        favoriteCount: _toInt(json['favoriteCount']) ?? 0,
       );
       return item;
     } catch (e) {

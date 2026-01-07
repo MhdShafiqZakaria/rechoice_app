@@ -7,12 +7,15 @@ class ProfileAppBar extends StatelessWidget {
   final bool isOwnProfile;
   final VoidCallback onEditPressed;
   final VoidCallback onLogoutPressed;
+    final VoidCallback? onBackPressed;
+
   const ProfileAppBar({
     super.key,
     required this.user,
     required this.isOwnProfile,
     required this.onEditPressed,
     required this.onLogoutPressed,
+    this.onBackPressed,
   });
 
   @override
@@ -23,7 +26,13 @@ class ProfileAppBar extends StatelessWidget {
       backgroundColor: const Color(0xFF2E5C9A),
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: () => Navigator.pop(context),
+        onPressed: () {
+          if (onBackPressed != null) {
+            onBackPressed!();
+          } else {
+            Navigator.pop(context);
+          }
+        },
       ),
       actions: [
         if (isOwnProfile) ...[
