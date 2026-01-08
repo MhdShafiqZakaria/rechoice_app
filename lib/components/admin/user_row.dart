@@ -30,7 +30,6 @@ class UserRow extends StatelessWidget {
       }
       return parts.isNotEmpty ? parts[0] : 'unknown';
     } catch (e) {
-      print('Error getting enum value: $e');
       return 'unknown';
     }
   }
@@ -42,7 +41,6 @@ class UserRow extends StatelessWidget {
       final parts = dateStr.split(' ');
       return parts.isNotEmpty ? parts[0] : 'N/A';
     } catch (e) {
-      print('Error formatting date: $e');
       return 'N/A';
     }
   }
@@ -106,7 +104,7 @@ class UserRow extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: _getRoleColor(userRoleString).withOpacity(0.1),
+                color: _getRoleColor(userRoleString),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(

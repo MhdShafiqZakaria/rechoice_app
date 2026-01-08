@@ -410,7 +410,7 @@ class ItemsViewModel extends ChangeNotifier {
   Future<String?> createItemWithImage(Items item, File imageFile) async {
     try {
       // Validate inputs
-      if (item.sellerID == null || item.sellerID == 0) {
+      if (item.sellerID == 0) {
         throw Exception('Invalid seller ID: ${item.sellerID}');
       }
       if (!await imageFile.exists()) {
@@ -419,14 +419,14 @@ class ItemsViewModel extends ChangeNotifier {
 
       debugPrint('Step 1: Creating item for seller ${item.sellerID}');
       final itemId = await _itemService.createItem(item);
-      if (itemId == null || itemId.isEmpty) {
+      if (itemId.isEmpty) {
         throw Exception('Failed to create item: No ID returned');
       }
       debugPrint('Item created with ID: $itemId');
 
       debugPrint('Step 2: Uploading image to Firebase Storage for item $itemId');
       final imageUrl = await _itemService.uploadItemImage(imageFile, itemId);
-      if (imageUrl == null || imageUrl.isEmpty) {
+      if (imageUrl.isEmpty) {
         throw Exception('Failed to upload image: No URL returned');
       }
       debugPrint('Image uploaded to Firebase Storage: $imageUrl');

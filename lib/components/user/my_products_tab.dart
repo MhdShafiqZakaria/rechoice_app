@@ -23,7 +23,6 @@ class _MyProductsTabState extends State<MyProductsTab> {
   @override
   void initState() {
     super.initState();
-    print('DEBUG: MyProductsTab initialized for user ID: ${widget.user.userID}');
   }
 
   void _handleAddProductClick() async {

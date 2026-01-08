@@ -1,114 +1,80 @@
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'dart:io';
 
-/// AI Image Recognition Service
-/// Communicates with the Node.js backend for image recognition
-class AIImageService {
-  // Backend API base URL
-  // Change to your actual backend URL in production
-  static const String baseUrl = 'http://10.0.2.2:3000/api'; // Android emulator
-  // For physical device: 'http://192.168.x.x:3000/api'
-  // For iOS simulator: 'http://localhost:3000/api'
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:rechoice_app/models/model/ai_recognition_result.dart';
+import 'package:rechoice_app/models/model/image_history_model.dart';
 
+class AIImageService {
   final String userId;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFunctions _functions = FirebaseFunctions.instance;
 
   AIImageService({required this.userId});
 
-  /// Upload image and start AI recognition
-  /// Returns imageId to track progress
+  /// Upload image and trigger AI processing
   Future<String?> uploadImage(File imageFile) async {
     try {
-      print('📤 Uploading image: ${imageFile.path}');
-      print('📤 Image size: ${imageFile.lengthSync()} bytes');
-      print('📤 Backend URL: $baseUrl/images/upload');
+      // Generate unique image ID
+      final imageId = DateTime.now().millisecondsSinceEpoch.toString();
+      final fileName = 'images/$userId/$imageId.jpg';
 
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/images/upload'),
-      );
+      print('📤 Uploading to Firebase Storage: $fileName');
 
-      // Determine MIME type based on file extension
-      String getMimeType(String filePath) {
-        if (filePath.toLowerCase().endsWith('.png')) {
-          return 'image/png';
-        } else if (filePath.toLowerCase().endsWith('.webp')) {
-          return 'image/webp';
-        } else {
-          return 'image/jpeg'; // default to JPEG
-        }
-      }
+      // Upload to Cloud Storage
+      final ref = _storage.ref().child(fileName);
+      await ref.putFile(imageFile);
+      final imageUrl = await ref.getDownloadURL();
 
-      final mimeType = getMimeType(imageFile.path);
-      print('📤 Image MIME type: $mimeType');
+      print('✓ Upload complete: $imageUrl');
 
-      // Add image file with explicit MIME type
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'image',
-          imageFile.path,
-          contentType: http.MediaType.parse(mimeType),
-        ),
-      );
+      // Create metadata in Firestore
+      await _firestore.collection('images').doc(imageId).set({
+        'imageId': imageId,
+        'userId': userId,
+        'filename': fileName,
+        'imageUrl': imageUrl,
+        'status': 'pending',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
 
-      // Add userId
-      request.fields['userId'] = userId;
-      
-      print('📤 Sending request to backend...');
+      // Trigger Cloud Function for AI processing
+      print('🤖 Triggering AI processing...');
+      await _functions.httpsCallable('processImage').call({
+        'imageId': imageId,
+        'imageUrl': imageUrl,
+      });
 
-      // Send request with timeout
-      var response = await request.send().timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          print('❌ Request timeout after 30 seconds');
-          throw Exception('Upload timeout');
-        },
-      );
-
-      print('📤 Response status: ${response.statusCode}');
-      final responseBody = await response.stream.bytesToString();
-      print('📤 Response body: $responseBody');
-
-      if (response.statusCode == 202) {
-        // 202 = Accepted (processing started)
-        final responseData = jsonDecode(responseBody);
-        final imageId = responseData['imageId'];
-        print('✓ Image uploaded: $imageId');
-        return imageId;
-      } else {
-        print('✗ Upload failed with status: ${response.statusCode}');
-        print('✗ Response: $responseBody');
-        return null;
-      }
+      return imageId;
     } catch (e) {
       print('✗ Upload error: $e');
-      print('✗ Stack trace: ${StackTrace.current}');
       return null;
     }
   }
 
-  /// Get AI recognition results
-  /// Returns null if still processing, or results when ready
+  /// Get AI recognition results from Firestore
   Future<AIRecognitionResult?> getResults(String imageId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/images/$imageId/results'),
-      ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        // Results ready
-        final data = jsonDecode(response.body);
-        print('✓ Results received for $imageId');
-        return AIRecognitionResult.fromJson(data['results']);
-      } else if (response.statusCode == 202) {
-        // Still processing
-        print('⏳ Still processing $imageId');
-        return null;
-      } else if (response.statusCode == 404) {
+      final doc = await _firestore.collection('images').doc(imageId).get();
+      
+      if (!doc.exists) {
         print('✗ Image not found: $imageId');
         return null;
+      }
+
+      final data = doc.data()!;
+      final status = data['status'];
+
+      if (status == 'completed' && data['results'] != null) {
+        print('✓ Results ready for $imageId');
+        return AIRecognitionResult.fromJson(data['results']);
+      } else if (status == 'processing' || status == 'pending') {
+        print('⏳ Still processing $imageId');
+        return null;
       } else {
-        print('✗ Error: ${response.statusCode}');
+        print('✗ Processing failed: $imageId');
         return null;
       }
     } catch (e) {
@@ -117,43 +83,31 @@ class AIImageService {
     }
   }
 
-  /// Poll for results with retry logic
-  /// Polls up to 60 times with 2 second delay (2 minutes total)
-  /// Google Vision API can take 5-15 seconds per image
-  Future<AIRecognitionResult?> waitForResults(
-    String imageId, {
-    int maxRetries = 60,
-    Duration retryDelay = const Duration(seconds: 2),
-  }) async {
-    for (int i = 0; i < maxRetries; i++) {
-      final result = await getResults(imageId);
-      if (result != null) {
-        return result;
+  /// Listen to results in real-time (better than polling)
+  Stream<AIRecognitionResult?> watchResults(String imageId) {
+    return _firestore.collection('images').doc(imageId).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      
+      final data = doc.data()!;
+      if (data['status'] == 'completed' && data['results'] != null) {
+        return AIRecognitionResult.fromJson(data['results']);
       }
-      if (i < maxRetries - 1) {
-        print('⏳ Waiting... (${i + 1}/$maxRetries)');
-        await Future.delayed(retryDelay);
-      }
-    }
-    return null;
+      return null;
+    });
   }
 
   /// Get user's image history
   Future<List<ImageHistory>> getUserImages() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/$userId/images'),
-      );
+      final snapshot = await _firestore
+          .collection('images')
+          .where('userId', isEqualTo: userId)
+          .orderBy('timestamp', descending: true)
+          .get();
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final images = (data['images'] as List)
-            .map((img) => ImageHistory.fromJson(img))
-            .toList();
-        print('✓ Got ${images.length} images');
-        return images;
-      }
-      return [];
+      return snapshot.docs
+          .map((doc) => ImageHistory.fromJson(doc.data()))
+          .toList();
     } catch (e) {
       print('✗ Error getting images: $e');
       return [];
@@ -163,168 +117,21 @@ class AIImageService {
   /// Delete image
   Future<bool> deleteImage(String imageId) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/images/$imageId?userId=$userId'),
-      );
-
-      if (response.statusCode == 200) {
-        print('✓ Image deleted: $imageId');
-        return true;
+      // Delete from Firestore
+      await _firestore.collection('images').doc(imageId).delete();
+      
+      // Delete from Storage
+      final doc = await _firestore.collection('images').doc(imageId).get();
+      if (doc.exists) {
+        final fileName = doc.data()!['filename'];
+        await _storage.ref().child(fileName).delete();
       }
-      return false;
+
+      print('✓ Image deleted: $imageId');
+      return true;
     } catch (e) {
       print('✗ Delete error: $e');
       return false;
     }
-  }
-}
-
-/// Model for AI Recognition Results
-class AIRecognitionResult {
-  final List<Label> labels;
-  final List<ObjectDetection> objects;
-  final List<DominantColor> colors;
-  final int faces;
-  final String text;
-  final List<WebEntity> webEntities;
-  final double processingTime;
-
-  AIRecognitionResult({
-    required this.labels,
-    required this.objects,
-    required this.colors,
-    required this.faces,
-    required this.text,
-    required this.webEntities,
-    required this.processingTime,
-  });
-
-  factory AIRecognitionResult.fromJson(Map<String, dynamic> json) {
-    return AIRecognitionResult(
-      labels: (json['labels'] as List?)
-              ?.map((l) => Label.fromJson(l))
-              .toList() ??
-          [],
-      objects: (json['objects'] as List?)
-              ?.map((o) => ObjectDetection.fromJson(o))
-              .toList() ??
-          [],
-      colors: (json['colors'] as List?)
-              ?.map((c) => DominantColor.fromJson(c))
-              .toList() ??
-          [],
-      faces: json['faces'] ?? 0,
-      text: json['text'] ?? '',
-      webEntities: (json['webEntities'] as List?)
-              ?.map((e) => WebEntity.fromJson(e))
-              .toList() ??
-          [],
-      processingTime: (json['processingTime'] ?? 0).toDouble(),
-    );
-  }
-}
-
-/// Model for detected labels
-class Label {
-  final String name;
-  final double confidence;
-  final String description;
-
-  Label({
-    required this.name,
-    required this.confidence,
-    required this.description,
-  });
-
-  factory Label.fromJson(Map<String, dynamic> json) {
-    return Label(
-      name: json['name'] ?? '',
-      confidence: (json['confidence'] ?? 0).toDouble(),
-      description: json['description'] ?? '',
-    );
-  }
-}
-
-/// Model for detected objects
-class ObjectDetection {
-  final String name;
-  final double confidence;
-
-  ObjectDetection({
-    required this.name,
-    required this.confidence,
-  });
-
-  factory ObjectDetection.fromJson(Map<String, dynamic> json) {
-    return ObjectDetection(
-      name: json['name'] ?? '',
-      confidence: (json['confidence'] ?? 0).toDouble(),
-    );
-  }
-}
-
-/// Model for dominant colors
-class DominantColor {
-  final String hex;
-  final int pixelFraction;
-
-  DominantColor({
-    required this.hex,
-    required this.pixelFraction,
-  });
-
-  factory DominantColor.fromJson(Map<String, dynamic> json) {
-    return DominantColor(
-      hex: json['hex'] ?? '#000000',
-      pixelFraction: json['pixelFraction'] ?? 0,
-    );
-  }
-}
-
-/// Model for web entities
-class WebEntity {
-  final String description;
-  final double score;
-
-  WebEntity({
-    required this.description,
-    required this.score,
-  });
-
-  factory WebEntity.fromJson(Map<String, dynamic> json) {
-    return WebEntity(
-      description: json['description'] ?? '',
-      score: (json['score'] ?? 0).toDouble(),
-    );
-  }
-}
-
-/// Model for image history
-class ImageHistory {
-  final String imageId;
-  final String filename;
-  final DateTime timestamp;
-  final String status;
-  final String? topLabel;
-  final double? confidence;
-
-  ImageHistory({
-    required this.imageId,
-    required this.filename,
-    required this.timestamp,
-    required this.status,
-    this.topLabel,
-    this.confidence,
-  });
-
-  factory ImageHistory.fromJson(Map<String, dynamic> json) {
-    return ImageHistory(
-      imageId: json['imageId'] ?? '',
-      filename: json['filename'] ?? '',
-      timestamp: DateTime.parse(json['timestamp'] ?? DateTime.now().toString()),
-      status: json['status'] ?? 'pending',
-      topLabel: json['topLabel'],
-      confidence: (json['confidence'] ?? 0).toDouble(),
-    );
   }
 }

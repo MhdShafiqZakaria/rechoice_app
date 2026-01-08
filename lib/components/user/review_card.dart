@@ -68,7 +68,7 @@ class ReviewCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black,
             offset: const Offset(0, 2),
             blurRadius: 4,
           ),

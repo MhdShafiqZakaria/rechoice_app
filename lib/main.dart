@@ -128,125 +128,45 @@ class MainApp extends StatelessWidget {
   }
 }
 
-/// Route guard to protect admin-only routes
-class _AdminRouteGuard extends StatefulWidget {
+class _AdminRouteGuard extends StatelessWidget {
   final Widget child;
 
   const _AdminRouteGuard({required this.child});
 
   @override
-  State<_AdminRouteGuard> createState() => _AdminRouteGuardState();
-}
-
-class _AdminRouteGuardState extends State<_AdminRouteGuard> {
-  bool _isChecking = true;
-  bool _hasAccess = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkAdminAccess();
-  }
-
-  Future<void> _checkAdminAccess() async {
-    try {
-      final authService = AuthService();
-
-      // Check if user is authenticated
-      if (authService.currentUser == null) {
-        // User not logged in - redirect to login
-        if (mounted) {
-          Navigator.of(context).pushReplacementNamed('/');
-        }
-        return;
-      }
-
-      // Check if user is admin
-      try {
-        final isAdmin = await authService.isAdmin();
-
-        if (!mounted) return; // Widget was disposed during async operation
-
-        if (isAdmin) {
-          // User is admin - grant access
-          setState(() {
-            _hasAccess = true;
-            _isChecking = false;
-          });
-        } else {
-          // User is not admin - deny access
-          _redirectToDashboard('User does not have admin permissions');
-        }
-      } catch (e) {
-        // Error checking admin status - deny access for security
-        if (mounted) {
-          _redirectToDashboard('Unable to verify admin status: $e');
-        }
-      }
-    } catch (e) {
-      // Unexpected error - deny access for security
-      if (mounted) {
-        _redirectToDashboard('An unexpected error occurred');
-      }
-    }
-  }
-
-  void _redirectToDashboard(String reason) {
-    if (!mounted) return;
-
-    try {
-      // Show error message before navigation to ensure it displays
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Access denied: $reason'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-
-      // Navigate after showing message (with small delay to ensure snackbar is queued)
-      Future.delayed(const Duration(milliseconds: 200), () {
-        if (mounted) {
-          Navigator.of(context).pushReplacementNamed('/dashboard');
-        }
-      });
-    } catch (e) {
-      // Fallback: navigate without snackbar if there's an error
-      try {
-        Navigator.of(context).pushReplacementNamed('/dashboard');
-      } catch (_) {
-        // If navigation fails completely, force a hard redirect
-        // This can happen if Navigator is in an invalid state
-      }
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (_isChecking) {
-      return LoadingPage();
-    }
+    return FutureBuilder<bool>(
+      future: _checkAdmin(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return LoadingPage();
+        }
 
-    if (!_hasAccess) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.lock, size: 64, color: Colors.red),
-              SizedBox(height: 16),
-              Text(
-                'Access Denied',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        if (snapshot.data != true) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(context).pushReplacementNamed('/dashboard');
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Access denied: Admin only'),
+                backgroundColor: Colors.red,
               ),
-              SizedBox(height: 8),
-              Text('This page is for administrators only'),
-            ],
-          ),
-        ),
-      );
-    }
+            );
+          });
+          return const SizedBox();
+        }
 
-    return widget.child;
+        return child;
+      },
+    );
+  }
+
+  Future<bool> _checkAdmin() async {
+    final auth = AuthService();
+    if (auth.currentUser == null) return false;
+    try {
+      return await auth.isAdmin();
+    } catch (_) {
+      return false;
+    }
   }
 }

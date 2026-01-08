@@ -165,7 +165,7 @@ class _AdminSliverScaffoldState extends State<AdminSliverScaffold>
                           Text(
                             widget.subtitle,
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white24,
                               fontSize: 16,
                             ),
                           ),

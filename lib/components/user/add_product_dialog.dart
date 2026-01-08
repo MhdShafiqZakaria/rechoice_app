@@ -5,7 +5,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:rechoice_app/models/model/items_model.dart';
 import 'package:rechoice_app/models/model/category_model.dart';
-import 'package:rechoice_app/models/services/local_storage_service.dart';
 import 'package:rechoice_app/models/viewmodels/category_view_model.dart';
 import 'package:rechoice_app/models/viewmodels/items_view_model.dart';
 
@@ -69,11 +68,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
         _categories = categoryVM.categories;
 
         _loadingCategories = false;
-        // Debug: Check for duplicates
-        print('Total categories: ${_categories.length}');
-        for (var cat in _categories) {
-          print('Category: ${cat.categoryID} - ${cat.name}');
-        }
+
       });
     }
   }
@@ -132,29 +127,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
         setState(() => _isSubmitting = false);
         return;
       }
-      print('Item created with ID: $itemId');
-      // DEBUG
-      try {
-        final localStorage = Provider.of<LocalStorageService>(
-          context,
-          listen: false,
-        );
-
-        if (!await _image!.exists()) {
-          print('ERROR: Image file no longer exists at ${_image!.path}');
-          throw Exception('Image file not found');
-        }
-
-        final savedPath = await localStorage.saveItemImage(
-          _image!,
-          itemId.toString(),
-        );
-        print('Image saved locally with item ID: $itemId, at $savedPath');
-      } catch (e, stackTrace) {
-        print('Warning: Failed to save image locally: $e');
-        print('Stack trace: $stackTrace');
-      }
-
+      
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -165,9 +138,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
       );
 
       Navigator.pop(context, true);
-    } catch (e, stackTrace) {
-      print('ERROR in _submit: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
       if (!mounted) return;
       _showError('Error: $e');
       setState(() => _isSubmitting = false);
@@ -376,7 +347,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
             horizontal: 16,
             vertical: 12,
           ),
-          prefixText: decimal ? '\RM ' : null,
+          prefixText: decimal ? 'RM ' : null,
         ),
       ),
     );

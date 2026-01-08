@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rechoice_app/components/dashboard/category_btn.dart';
 import 'package:rechoice_app/components/dashboard/product_card.dart';
-import 'package:rechoice_app/components/ai_recognition_fab.dart';
+import 'package:rechoice_app/models/model/ai_recognition_model.dart';
 import 'package:rechoice_app/models/model/category_model.dart';
 import 'package:rechoice_app/models/model/items_model.dart';
 import 'package:rechoice_app/models/services/authenticate.dart';
@@ -37,12 +37,14 @@ class _DashboardState extends State<Dashboard> {
     _loadData();
   }
 
-  void _initializeServices() {
-    final firestoreService = FirestoreService();
-    final itemService = ItemService(FirestoreService(), LocalStorageService());
-    _listingService = ListingService(firestoreService, itemService);
-    _categoryService = CategoryService(firestoreService);
-  }
+void _initializeServices() {
+  final firestoreService = FirestoreService();
+  final localStorageService = LocalStorageService();
+  final itemService = ItemService(firestoreService, localStorageService);
+  
+  _listingService = ListingService(firestoreService, itemService);
+  _categoryService = CategoryService(firestoreService);
+}
 
   Future<void> _loadData() async {
     try {
@@ -56,8 +58,7 @@ class _DashboardState extends State<Dashboard> {
       _categories = await _categoryService.getAllCategories();
       print('DEBUG: Loaded ${_categories.length} categories');
 
-      // Fetch all listings from Firebase (using getAllListings for debugging)
-      // Note: Replace with getApprovedListings() once your items have proper moderation status
+      // Fetch all listings from Firebase
       final listings = await _listingService.getApprovedListings();
       _allProducts = listings.map((listing) => listing.item).toList();
       _filteredProducts = _allProducts;
@@ -226,7 +227,13 @@ class _DashboardState extends State<Dashboard> {
     return Scaffold(
       backgroundColor: Colors.white,
       floatingActionButton: FloatingActionButton(
-        onPressed: () => AIRecognitionFAB.openRecognition(context),
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) => const AIRecognitionModal(),
+            useSafeArea: true,
+          );
+        },
         backgroundColor: Colors.blue,
         tooltip: 'AI Image Recognition',
         child: const Icon(Icons.image_search, color: Colors.white),
@@ -263,9 +270,7 @@ class _DashboardState extends State<Dashboard> {
                     ),
 
                     //Logo
-                    child: Center(
-                      child: Image.asset('assets/images/logo.png'),
-                    ),
+                    child: Center(child: Image.asset('assets/images/logo.png')),
                   ),
                   SizedBox(width: 12),
                   Expanded(

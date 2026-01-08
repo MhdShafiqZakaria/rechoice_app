@@ -51,9 +51,6 @@ class Users {
 
     final uid = json['uid'] as String? ?? json['id'] as String? ?? '';
 
-    if (uid.isEmpty) {
-      print('WARNING: Creating Users instance with empty uid from data: $json');
-    }
 
     return Users(
       uid: uid,

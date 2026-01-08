@@ -42,7 +42,6 @@ class FirestoreService {
       });
     });
 
-    print('✅ User document created for $email');
   }
 
   //

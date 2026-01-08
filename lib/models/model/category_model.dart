@@ -33,7 +33,6 @@ class ItemCategoryModel {
 
   //Factory Method to create model instance from Json map
   factory ItemCategoryModel.fromJson(Map<String, dynamic> json) {
-    print('DEBUG: Parsing ItemCategoryModel from: $json');
     try {
       return ItemCategoryModel(
         categoryID: json['categoryID'] as int? ?? -1, // Safe cast with default
@@ -41,7 +40,6 @@ class ItemCategoryModel {
         iconName: json['iconName'] as String? ?? 'default_icon',
       );
     } catch (e) {
-      print('DEBUG: Error in ItemCategoryModel.fromJson: $e');
       return ItemCategoryModel.empty(); // Return empty on error
     }
   }

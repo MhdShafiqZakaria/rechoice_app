@@ -23,7 +23,6 @@ class AuthService {
     try {
       return await _firebaseFirestore.isAdmin(user.uid);
     } catch (e) {
-      print('ERROR: Error checking admin status: $e');
       return false;
     }
   }
@@ -42,7 +41,6 @@ class AuthService {
       }
       return null;
     } catch (e) {
-      print('ERROR: Error getting user role: $e');
       return null;
     }
   }
@@ -61,7 +59,6 @@ class AuthService {
       }
       return null;
     } catch (e) {
-      print('ERROR: Error getting user status: $e');
       return null;
     }
   }
@@ -93,7 +90,6 @@ class AuthService {
     try {
       return UserStatus.values.byName(statusString.toLowerCase());
     } catch (e) {
-      print('ERROR: Invalid UserStatus string: $statusString, defaulting to active');
       return UserStatus.active;
     }
   }
@@ -103,21 +99,18 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    print('DEBUG: Starting login for $email');
 
     final userCredential = await firebaseAuth.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
 
-    print('DEBUG: Firebase Auth successful for ${userCredential.user?.uid}');
 
     // Check user status in Firestore with retry logic
     if (userCredential.user != null) {
       await _checkUserStatusWithRetry(userCredential.user!.uid);
     }
 
-    print('DEBUG: Login successful, returning credential');
     return userCredential;
   }
 
@@ -129,21 +122,17 @@ class AuthService {
 
     for (int attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        print('DEBUG: Checking user status in Firestore (attempt ${attempt + 1}/$maxRetries)');
         
         final userDoc = await _firebaseFirestore.getUser(uid);
         final userData = userDoc.data() as Map<String, dynamic>?;
 
-        print('DEBUG: User data retrieved: $userData');
 
         if (userData != null) {
           final statusString = userData['status'] as String?;
           final userStatus = _parseUserStatus(statusString);
-          print('DEBUG: User status: $userStatus');
 
           // Check if user is suspended
           if (userStatus == UserStatus.suspended) {
-            print('DEBUG: User is suspended, signing out immediately');
             await firebaseAuth.signOut();
             throw FirebaseAuthException(
               code: 'user-suspended',
@@ -154,7 +143,6 @@ class AuthService {
 
           // Check if user is deleted
           if (userStatus == UserStatus.deleted) {
-            print('DEBUG: User is deleted, signing out immediately');
             await firebaseAuth.signOut();
             throw FirebaseAuthException(
               code: 'user-deleted',
@@ -164,12 +152,10 @@ class AuthService {
           }
 
           // If status is 'active' or any other value, allow login
-          print('DEBUG: User status is $userStatus, allowing login');
         } else {
           // If userData is null on first attempt, try again
           // If it's the last attempt and still null, allow login (new user or document issue)
           if (attempt == maxRetries - 1) {
-            print('DEBUG: User data is null after $maxRetries attempts, allowing login');
           } else {
             throw Exception('User document not found, retrying...');
           }
@@ -179,18 +165,15 @@ class AuthService {
         return;
         
       } catch (e) {
-        print('DEBUG: Exception in status check (attempt ${attempt + 1}/$maxRetries): $e');
         
         // If it's our custom FirebaseAuthException, rethrow immediately
         if (e is FirebaseAuthException && 
             (e.code == 'user-suspended' || e.code == 'user-deleted')) {
-          print('DEBUG: Rethrowing security-related FirebaseAuthException');
           rethrow;
         }
 
         // If this is the last attempt, fail the login
         if (attempt == maxRetries - 1) {
-          print('ERROR: Failed to verify user status after $maxRetries attempts. Login denied for security.');
           await firebaseAuth.signOut();
           throw FirebaseAuthException(
             code: 'status-check-failed',
@@ -201,7 +184,6 @@ class AuthService {
 
         // Wait before retrying with exponential backoff
         final delayMs = retryDelayMs * (attempt + 1);
-        print('DEBUG: Retrying in ${delayMs}ms...');
         await Future.delayed(Duration(milliseconds: delayMs));
       }
     }

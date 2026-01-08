@@ -77,7 +77,6 @@ class DashboardService {
         recentActivity: results[4] as List<RecentActivity>,
       );
     } catch (e) {
-      print('DEBUG: Error fetching dashboard metrics: $e');
       rethrow;
     }
   }
@@ -88,7 +87,6 @@ class DashboardService {
       final snapshot = await _db.collection('users').get();
       return snapshot.docs.length;
     } catch (e) {
-      print('DEBUG: Error getting total users: $e');
       return 0;
     }
   }
@@ -99,7 +97,6 @@ class DashboardService {
       final snapshot = await _firestoreService.getUsersByStatus('active');
       return snapshot.docs.length;
     } catch (e) {
-      print('DEBUG: Error getting active users: $e');
       return 0;
     }
   }
@@ -110,7 +107,6 @@ class DashboardService {
       final snapshot = await _db.collection('items').get();
       return snapshot.docs.length;
     } catch (e) {
-      print('DEBUG: Error getting total listings: $e');
       return 0;
     }
   }
@@ -124,7 +120,6 @@ class DashboardService {
           .get();
       return snapshot.docs.length;
     } catch (e) {
-      print('DEBUG: Error getting pending reports: $e');
       return 0;
     }
   }
@@ -201,7 +196,6 @@ class DashboardService {
       activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
       return activities.take(10).toList();
     } catch (e) {
-      print('DEBUG: Error getting recent activity: $e');
       return [];
     }
   }

@@ -1,23 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:rechoice_app/models/model/ai_recognition_result.dart';
+import 'package:rechoice_app/services/ai_image_service.dart';
 import 'dart:io';
-import '../services/ai_image_service.dart';
-
-/// AI Recognition FAB Widget
-/// Manages camera button and result display modal
-class AIRecognitionFAB {
-  static void openRecognition(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => const AIRecognitionModal(),
-      useSafeArea: true,
-    );
-  }
-}
+import 'dart:async';
 
 /// Modal dialog for AI image recognition
 class AIRecognitionModal extends StatefulWidget {
-  const AIRecognitionModal({Key? key}) : super(key: key);
+  const AIRecognitionModal({super.key});
 
   @override
   State<AIRecognitionModal> createState() => _AIRecognitionModalState();
@@ -29,16 +19,21 @@ class _AIRecognitionModalState extends State<AIRecognitionModal> {
 
   File? _selectedImage;
   bool _isLoading = false;
-  String? _currentImageId;
   AIRecognitionResult? _results;
   String? _error;
-  String _userId = 'user_${DateTime.now().millisecondsSinceEpoch}';
+  final String _userId = 'user_${DateTime.now().millisecondsSinceEpoch}';
+  StreamSubscription<AIRecognitionResult?>? _resultsSubscription;
 
   @override
   void initState() {
     super.initState();
-    // Get userId from Firebase if available, otherwise use temporary ID
     _aiService = AIImageService(userId: _userId);
+  }
+
+  @override
+  void dispose() {
+    _resultsSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _pickImage() async {
@@ -95,23 +90,38 @@ class _AIRecognitionModalState extends State<AIRecognitionModal> {
     });
 
     try {
-      // Upload image
+      await _resultsSubscription?.cancel();
+
       final imageId = await _aiService.uploadImage(_selectedImage!);
       if (imageId == null) {
         throw 'Failed to upload image';
       }
 
-      setState(() => _currentImageId = imageId);
+      _resultsSubscription = _aiService
+          .watchResults(imageId)
+          .listen(
+            (results) {
+              if (results != null && mounted) {
+                setState(() {
+                  _results = results;
+                  _isLoading = false;
+                });
+                _resultsSubscription?.cancel();
+              }
+            },
+            onError: (error) {
+              if (mounted) {
+                _showError('Error getting results: $error');
+              }
+              _resultsSubscription?.cancel();
+            },
+          );
 
-      // Wait for results
-      final results = await _aiService.waitForResults(imageId);
-      if (results == null) {
-        throw 'Processing timeout - try again later';
-      }
-
-      setState(() {
-        _results = results;
-        _isLoading = false;
+      Future.delayed(const Duration(minutes: 2), () {
+        if (_isLoading && mounted) {
+          _showError('Processing timeout - try again later');
+          _resultsSubscription?.cancel();
+        }
       });
     } catch (e) {
       _showError('Error: $e');
@@ -133,7 +143,6 @@ class _AIRecognitionModalState extends State<AIRecognitionModal> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -167,7 +176,6 @@ class _AIRecognitionModalState extends State<AIRecognitionModal> {
               ],
             ),
           ),
-          // Content
           Flexible(
             child: SingleChildScrollView(
               child: Padding(
@@ -175,7 +183,6 @@ class _AIRecognitionModalState extends State<AIRecognitionModal> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Image Preview
                     Container(
                       height: 250,
                       decoration: BoxDecoration(
@@ -186,20 +193,24 @@ class _AIRecognitionModalState extends State<AIRecognitionModal> {
                       child: _selectedImage != null
                           ? ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: Image.file(_selectedImage!,
-                                  fit: BoxFit.cover),
+                              child: Image.file(
+                                _selectedImage!,
+                                fit: BoxFit.cover,
+                              ),
                             )
                           : Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.image,
-                                      size: 64, color: Colors.grey[400]),
+                                  Icon(
+                                    Icons.image,
+                                    size: 64,
+                                    color: Colors.grey[400],
+                                  ),
                                   const SizedBox(height: 8),
                                   Text(
                                     'No image selected',
-                                    style: TextStyle(
-                                        color: Colors.grey[600]),
+                                    style: TextStyle(color: Colors.grey[600]),
                                   ),
                                 ],
                               ),
@@ -207,7 +218,6 @@ class _AIRecognitionModalState extends State<AIRecognitionModal> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Action Buttons
                     if (_results == null && !_isLoading)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -238,7 +248,6 @@ class _AIRecognitionModalState extends State<AIRecognitionModal> {
 
                     const SizedBox(height: 16),
 
-                    // Loading State
                     if (_isLoading)
                       Column(
                         children: [
@@ -263,7 +272,6 @@ class _AIRecognitionModalState extends State<AIRecognitionModal> {
                         ),
                       ),
 
-                    // Error
                     if (_error != null) ...[
                       const SizedBox(height: 12),
                       Container(
@@ -295,7 +303,6 @@ class _AIRecognitionModalState extends State<AIRecognitionModal> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Processing time
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -309,7 +316,6 @@ class _AIRecognitionModalState extends State<AIRecognitionModal> {
         ),
         const SizedBox(height: 12),
 
-        // Top Label
         if (_results!.labels.isNotEmpty)
           Container(
             padding: const EdgeInsets.all(12),
@@ -350,25 +356,29 @@ class _AIRecognitionModalState extends State<AIRecognitionModal> {
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           ),
           const SizedBox(height: 8),
-          ..._results!.labels.skip(1).take(3).map((label) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(label.name),
-                    Chip(
-                      label: Text(
-                        '${(label.confidence * 100).toStringAsFixed(0)}%',
+          ..._results!.labels
+              .skip(1)
+              .take(3)
+              .map(
+                (label) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(label.name),
+                      Chip(
+                        label: Text(
+                          '${(label.confidence * 100).toStringAsFixed(0)}%',
+                        ),
+                        backgroundColor: Colors.grey[200],
+                        labelStyle: const TextStyle(fontSize: 10),
                       ),
-                      backgroundColor: Colors.grey[200],
-                      labelStyle: const TextStyle(fontSize: 10),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              )),
+              ),
         ],
 
-        // Objects
         if (_results!.objects.isNotEmpty) ...[
           const SizedBox(height: 12),
           const Text(
@@ -376,23 +386,28 @@ class _AIRecognitionModalState extends State<AIRecognitionModal> {
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           ),
           const SizedBox(height: 8),
-          ..._results!.objects.take(2).map((obj) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(obj.name),
-                    Chip(
-                      label: Text('${(obj.confidence * 100).toStringAsFixed(0)}%'),
-                      backgroundColor: Colors.purple[200],
-                      labelStyle: const TextStyle(fontSize: 10),
-                    ),
-                  ],
+          ..._results!.objects
+              .take(2)
+              .map(
+                (obj) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(obj.name),
+                      Chip(
+                        label: Text(
+                          '${(obj.confidence * 100).toStringAsFixed(0)}%',
+                        ),
+                        backgroundColor: Colors.purple[200],
+                        labelStyle: const TextStyle(fontSize: 10),
+                      ),
+                    ],
+                  ),
                 ),
-              )),
+              ),
         ],
 
-        // Close button
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
@@ -403,9 +418,7 @@ class _AIRecognitionModalState extends State<AIRecognitionModal> {
                 _results = null;
               });
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
             child: const Text('Recognize Another Image'),
           ),
         ),

@@ -567,7 +567,7 @@ class ListingService {
       // Create the item in Firestore
       final itemId = await _itemService.createItem(item);
 
-      if (itemId == null || itemId.isEmpty) {
+      if (itemId.isEmpty) {
         throw Exception('Failed to create item: No ID returned');
       }
 

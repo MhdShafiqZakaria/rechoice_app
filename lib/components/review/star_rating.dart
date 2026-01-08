@@ -60,7 +60,7 @@ class _StarRatingState extends State<StarRating> {
                   final localPosition = box.globalToLocal(details.globalPosition);
                   final starWidth = box.size.width / widget.starCount;
                   final newRating =
-                      ((localPosition.dx / starWidth) + 1).clamp(1.0, widget.starCount.toDouble()) as double;
+                      ((localPosition.dx / starWidth) + 1).clamp(1.0, widget.starCount.toDouble());
                   setState(() {
                     _hoverRating = newRating;
                   });
@@ -99,8 +99,4 @@ class _StarRatingState extends State<StarRating> {
   }
 }
 
-extension on double {
-  double roundToDouble() {
-    return (this * 2).round() / 2;
-  }
-}
+

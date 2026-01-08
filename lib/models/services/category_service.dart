@@ -166,7 +166,6 @@ class CategoryService {
     try {
       final count = await getCategoryCount();
       if (count > 0) {
-        print('Categories already exist, skipping seed');
         return;
       }
 
@@ -188,7 +187,6 @@ class CategoryService {
         }
       }
 
-      print('✅ Default categories seeded successfully');
     } catch (e) {
       throw Exception('Failed to seed categories: $e');
     }

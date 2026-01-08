@@ -29,7 +29,6 @@ class _UserProfileState extends State<UserProfile>
   late TabController _tabController;
   bool _hasLoadedItems = false;
   bool _isLoading = true;
-  bool _dataLoaded = false;
   Users? _user;
   String? _error;
 
